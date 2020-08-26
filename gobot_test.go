@@ -33,20 +33,9 @@ func TestMapping(t *testing.T) {
 	bot.meta.Refresh(bot.mapping.GetAll())
 
 	bot.mapping.Set("mails", []prefab.MailDat{
-		{ID: "1", Title: "test1", Received: true},
-		{ID: "2", Title: "test2", Received: true},
+		{ID: "1", Title: "test1", Content: "content1"},
+		{ID: "2", Title: "test2", Content: "content2"},
 	})
-
-	bot.meta.Refresh(bot.mapping.GetAll())
-
-	bot.mapping.Set("acclogintime", time.Now().Unix())
-	bot.meta.Refresh(bot.mapping.GetAll())
-
-	bot.mapping.Set("accbag", []prefab.ItemDat{
-		{ID: "item1", Num: 1},
-		{ID: "item2", Num: 10}},
-	)
-
 	bot.meta.Refresh(bot.mapping.GetAll())
 
 	bot.mapping.Print()
