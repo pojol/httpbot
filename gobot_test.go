@@ -1,7 +1,6 @@
 package gobot
 
 import (
-	"fmt"
 	"gobot/prefab"
 	"testing"
 	"time"
@@ -9,17 +8,17 @@ import (
 
 func TestBot(t *testing.T) {
 
-	var md prefab.BotMetaData
+	md := &prefab.BotMetaData{}
 
 	bot := New(BotConfig{
 		Addr: "127.0.0.1",
-	}, &md)
+	}, md)
 
 	createStep := bot.Timeline.AddStep(time.Millisecond * 100)
 	createStep.AddCard(prefab.NewAccCreateCard())
 
 	loginStep := bot.Timeline.AddStep(time.Millisecond * 100)
-	loginStep.AddCard(prefab.NewAccLoginCard(&md))
+	loginStep.AddCard(prefab.NewAccLoginCard(md))
 
 	bot.Run()
 
@@ -28,8 +27,7 @@ func TestBot(t *testing.T) {
 
 func TestMapping(t *testing.T) {
 
-	var md prefab.BotMetaData
-	bot := New(BotConfig{}, &md)
+	bot := New(BotConfig{}, &prefab.BotMetaData{})
 
 	bot.mapping.Set("acctoken", "xxx")
 	bot.meta.Refresh(bot.mapping.GetAll())
@@ -51,8 +49,5 @@ func TestMapping(t *testing.T) {
 
 	bot.meta.Refresh(bot.mapping.GetAll())
 
-	fmt.Println("acc token", md.AccToken)
-	fmt.Println("acc login time", md.AccLoginTime)
-	fmt.Println("acc bag", md.AccBag)
-	fmt.Println("mails", md.Mails)
+	bot.mapping.Print()
 }

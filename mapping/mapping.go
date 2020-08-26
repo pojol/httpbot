@@ -1,5 +1,7 @@
 package mapping
 
+import "fmt"
+
 // Mapping mapping
 type Mapping struct {
 	state map[string]interface{}
@@ -25,4 +27,11 @@ func (mp *Mapping) Get(key string) interface{} {
 // Set set data 2 mapping struct
 func (mp *Mapping) Set(key string, val interface{}) {
 	mp.state[key] = val
+}
+
+// Print print state
+func (mp *Mapping) Print() {
+	for k, v := range mp.state {
+		fmt.Println(k, v)
+	}
 }
