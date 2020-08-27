@@ -3,9 +3,10 @@ package cards
 import (
 	"encoding/json"
 	"fmt"
-	"gobot/sample/metadata"
 	"strconv"
 	"time"
+
+	"github.com/pojol/gobot/sample/metadata"
 )
 
 // MailSendCard mail send

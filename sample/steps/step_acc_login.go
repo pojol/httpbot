@@ -1,9 +1,10 @@
 package steps
 
 import (
-	"gobot/prefab"
-	"gobot/sample/cards"
 	"time"
+
+	"github.com/pojol/gobot/prefab"
+	"github.com/pojol/gobot/sample/cards"
 )
 
 // NewAccLoginStep prefab setp

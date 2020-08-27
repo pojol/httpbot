@@ -2,12 +2,13 @@ package main
 
 import (
 	"flag"
-	"gobot"
-	"gobot/sample/metadata"
-	"gobot/sample/steps"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/pojol/gobot"
+	"github.com/pojol/gobot/sample/metadata"
+	"github.com/pojol/gobot/sample/steps"
 )
 
 var (

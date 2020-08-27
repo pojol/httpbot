@@ -2,10 +2,11 @@ package gobot
 
 import (
 	"fmt"
-	"gobot/sample/metadata"
-	"gobot/sample/steps"
 	"testing"
 	"time"
+
+	"github.com/pojol/gobot/sample/metadata"
+	"github.com/pojol/gobot/sample/steps"
 )
 
 func TestBot(t *testing.T) {

@@ -3,11 +3,12 @@ package gobot
 import (
 	"bytes"
 	"fmt"
-	"gobot/mapping"
-	"gobot/prefab"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/pojol/gobot/mapping"
+	"github.com/pojol/gobot/prefab"
 )
 
 // BotConfig config
