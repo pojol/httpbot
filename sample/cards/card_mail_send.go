@@ -3,6 +3,8 @@ package cards
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -56,27 +58,29 @@ func (card *MailSendCard) Marshal() []byte {
 }
 
 // Unmarshal 反序列化返回消息
-func (card *MailSendCard) Unmarshal(data []byte) map[string]interface{} {
-	res := struct {
+func (card *MailSendCard) Unmarshal(res *http.Response) map[string]interface{} {
+
+	body, _ := ioutil.ReadAll(res.Body)
+	resDat := struct {
 		Code int
 		Msg  string
 		Body []byte
 	}{}
 
-	err := json.Unmarshal(data, &res)
+	err := json.Unmarshal(body, &resDat)
 	if err != nil {
 		fmt.Println("card unmarshal err", err)
 	}
 
-	if res.Code != 200 {
-		fmt.Println("card err", res.Code, res.Msg)
+	if resDat.Code != 200 {
+		fmt.Println("card err", resDat.Code, resDat.Msg)
 	}
 
 	mailRes := struct {
 		Token string
 		Mails []MailDat
 	}{}
-	err = json.Unmarshal(res.Body, &mailRes)
+	err = json.Unmarshal(resDat.Body, &mailRes)
 	if err != nil {
 		fmt.Println("card unmarshal err", err)
 	}

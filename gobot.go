@@ -3,7 +3,6 @@ package gobot
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -65,11 +64,7 @@ func (bot *Bot) exec(card prefab.ICard) {
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
-		fmt.Println(url, "req succ")
-
-		body, _ := ioutil.ReadAll(res.Body)
-
-		m := card.Unmarshal(body)
+		m := card.Unmarshal(res)
 		if m != nil {
 			for k := range m {
 				bot.mapping.Set(k, m[k])

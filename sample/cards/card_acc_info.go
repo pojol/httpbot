@@ -3,6 +3,7 @@ package cards
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/pojol/gobot/sample/metadata"
 )
@@ -39,7 +40,7 @@ func (card *AccInfoCard) Marshal() []byte {
 }
 
 // Unmarshal 反序列化返回消息
-func (card *AccInfoCard) Unmarshal(data []byte) map[string]interface{} {
+func (card *AccInfoCard) Unmarshal(res *http.Response) map[string]interface{} {
 
 	return nil
 }

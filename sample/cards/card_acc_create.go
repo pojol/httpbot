@@ -3,6 +3,8 @@ package cards
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 )
 
 // AccCreateCard 账号创建预制
@@ -29,26 +31,29 @@ func (card *AccCreateCard) Marshal() []byte {
 }
 
 // Unmarshal 反序列化返回消息
-func (card *AccCreateCard) Unmarshal(data []byte) map[string]interface{} {
-	res := struct {
+func (card *AccCreateCard) Unmarshal(res *http.Response) map[string]interface{} {
+
+	body, _ := ioutil.ReadAll(res.Body)
+
+	resDat := struct {
 		Code int
 		Msg  string
 		Body []byte
 	}{}
 
-	err := json.Unmarshal(data, &res)
+	err := json.Unmarshal(body, &resDat)
 	if err != nil {
 		fmt.Println("card unmarshal err", err)
 	}
 
-	if res.Code != 200 {
-		fmt.Println("card err", res.Code, res.Msg)
+	if resDat.Code != 200 {
+		fmt.Println("card err", resDat.Code, resDat.Msg)
 	}
 
 	createRes := struct {
 		Token string
 	}{}
-	err = json.Unmarshal(res.Body, &createRes)
+	err = json.Unmarshal(resDat.Body, &createRes)
 	if err != nil {
 		fmt.Println("card unmarshal err", err)
 	}
