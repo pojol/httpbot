@@ -1,4 +1,4 @@
-package prefab
+package metadata
 
 import (
 	"fmt"
