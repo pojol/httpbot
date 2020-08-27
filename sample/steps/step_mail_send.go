@@ -1,10 +1,11 @@
 package steps
 
 import (
-	"gobot/prefab"
-	"gobot/sample/cards"
-	"gobot/sample/metadata"
 	"time"
+
+	"github.com/pojol/gobot/prefab"
+	"github.com/pojol/gobot/sample/cards"
+	"github.com/pojol/gobot/sample/metadata"
 )
 
 // NewMailSendStep send mail step

@@ -3,7 +3,8 @@ package cards
 import (
 	"encoding/json"
 	"fmt"
-	"gobot/sample/metadata"
+
+	"github.com/pojol/gobot/sample/metadata"
 )
 
 // AccInfoCard 账号登录预制
