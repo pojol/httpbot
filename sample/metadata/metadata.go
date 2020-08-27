@@ -1,4 +1,4 @@
-package prefab
+package metadata
 
 import (
 	"fmt"
@@ -8,24 +8,15 @@ import (
 
 // MailDat mail data
 type MailDat struct {
-	ID       string
-	Title    string
-	Received bool
-}
-
-// ItemDat item data
-type ItemDat struct {
-	ID  string
-	Num int
+	ID      string
+	Title   string
+	Content string
 }
 
 // BotMetaData metadata struct
 type BotMetaData struct {
-	AccToken     string
-	AccLoginTime int64
-	AccBag       []ItemDat
-
-	Mails []MailDat
+	AccToken string
+	Mails    []MailDat
 }
 
 // Refresh refresh data
