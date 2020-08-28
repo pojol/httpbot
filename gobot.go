@@ -3,10 +3,10 @@ package gobot
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
 
+	"github.com/pojol/gobot/botreport"
 	"github.com/pojol/gobot/mapping"
 	"github.com/pojol/gobot/prefab"
 )
@@ -14,14 +14,6 @@ import (
 // BotConfig config
 type BotConfig struct {
 	Addr string
-}
-
-// Report request report
-type Report struct {
-	URL     string
-	Succ    int
-	Fail    int
-	Consume int
 }
 
 // Bot http bot
@@ -33,8 +25,7 @@ type Bot struct {
 	meta    prefab.IMetaData
 	mapping *mapping.Mapping
 
-	// https://xxx:6443/xxx succ : 10, fail : 0, consume : 100ms
-	Report map[string]Report
+	report *botreport.Report
 }
 
 // New new http test bot
@@ -42,6 +33,7 @@ func New(cfg BotConfig, meta prefab.IMetaData) *Bot {
 	return &Bot{
 		cfg:     cfg,
 		meta:    meta,
+		report:  botreport.NewReport(),
 		mapping: mapping.NewMapping(),
 	}
 }
@@ -49,6 +41,7 @@ func New(cfg BotConfig, meta prefab.IMetaData) *Bot {
 func (bot *Bot) exec(card prefab.ICard) {
 	url := bot.cfg.Addr + card.GetURL()
 
+	begin := time.Now().UnixNano()
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(card.Marshal()))
 	if err != nil {
 		fmt.Println("http.NewRequest", err)
@@ -60,16 +53,14 @@ func (bot *Bot) exec(card prefab.ICard) {
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Println("client.Do", err)
+		bot.report.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000))
 		return
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
-		fmt.Println(url, "req succ")
-
-		body, _ := ioutil.ReadAll(res.Body)
-
-		m := card.Unmarshal(body)
+		bot.report.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000))
+		m := card.Unmarshal(res)
 		if m != nil {
 			for k := range m {
 				bot.mapping.Set(k, m[k])
@@ -78,6 +69,7 @@ func (bot *Bot) exec(card prefab.ICard) {
 		}
 
 	} else {
+		bot.report.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000))
 		fmt.Println("http error status code", res.Status, "url", url)
 	}
 
@@ -95,6 +87,7 @@ func (bot *Bot) Run() {
 					for {
 						for _, c := range s.GetCards() {
 							bot.exec(c)
+							time.Sleep(c.GetDelay())
 						}
 
 						time.Sleep(s.GetDelay())
@@ -104,11 +97,19 @@ func (bot *Bot) Run() {
 			} else {
 				for _, c := range s.GetCards() {
 					bot.exec(c)
+					time.Sleep(c.GetDelay())
 				}
 			}
 
 			time.Sleep(s.GetDelay())
 		}
+
+		bot.Report()
 	}()
 
+}
+
+// Report print report
+func (bot *Bot) Report() {
+	bot.report.Print()
 }
