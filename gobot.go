@@ -13,7 +13,8 @@ import (
 
 // BotConfig config
 type BotConfig struct {
-	Addr string
+	Addr   string
+	Report bool
 }
 
 // Bot http bot
@@ -104,7 +105,9 @@ func (bot *Bot) Run() {
 			time.Sleep(s.GetDelay())
 		}
 
-		bot.Report()
+		if bot.cfg.Report {
+			bot.Report()
+		}
 	}()
 
 }
