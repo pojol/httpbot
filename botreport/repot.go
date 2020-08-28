@@ -62,9 +62,10 @@ func (r *Report) Print() {
 	for k := range r.Info {
 		t := r.getAverageTime(k)
 		if t > 100 {
-			fmt.Printf("%-30s Req count %-5d Average time \033[1;31;40m%-5d\033[0m ms Succ rate %-10s \n", k, len(r.Info[k]), t, r.getSuccRate(k))
+			fmt.Printf("%-30s Req count %-5d Average time \033[1;31;40m%-5s\033[0m Succ rate %-10s \n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", r.getSuccRate(k))
 		} else {
-			fmt.Printf("%-30s Req count %-5d Average time %-5d ms Succ rate %-10s \n", k, len(r.Info[k]), t, r.getSuccRate(k))
+
+			fmt.Printf("%-30s Req count %-5d Average time %-5s Succ rate %-10s \n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", r.getSuccRate(k))
 		}
 	}
 
