@@ -90,6 +90,7 @@ func (bot *Bot) Run() {
 					for {
 						for _, c := range s.GetCards() {
 							bot.exec(c)
+							time.Sleep(c.GetDelay())
 						}
 
 						time.Sleep(s.GetDelay())
@@ -99,6 +100,7 @@ func (bot *Bot) Run() {
 			} else {
 				for _, c := range s.GetCards() {
 					bot.exec(c)
+					time.Sleep(c.GetDelay())
 				}
 			}
 

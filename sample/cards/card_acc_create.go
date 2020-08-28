@@ -5,22 +5,31 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 // AccCreateCard 账号创建预制
 type AccCreateCard struct {
-	URL string
+	URL   string
+	delay time.Duration
 }
 
 // NewAccCreateCard 生成账号创建预制
 func NewAccCreateCard() *AccCreateCard {
 	return &AccCreateCard{
-		URL: "/acc.create",
+		URL:   "/acc.create",
+		delay: time.Millisecond,
 	}
 }
 
 // GetURL 获取服务器地址
 func (card *AccCreateCard) GetURL() string { return card.URL }
+
+// SetDelay 设置卡片之间调用的延迟
+func (card *AccCreateCard) SetDelay(delay time.Duration) { card.delay = delay }
+
+// GetDelay 获取卡片之间调用的延迟
+func (card *AccCreateCard) GetDelay() time.Duration { return card.delay }
 
 // Marshal 序列化传入消息体
 func (card *AccCreateCard) Marshal() []byte {

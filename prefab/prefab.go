@@ -1,10 +1,16 @@
 package prefab
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 // ICard 逻辑卡片接口
 type ICard interface {
 	GetURL() string
+
+	GetDelay() time.Duration
+	SetDelay(delay time.Duration)
 
 	Marshal() []byte
 	Unmarshal(res *http.Response) map[string]interface{}

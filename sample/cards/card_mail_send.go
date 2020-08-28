@@ -13,8 +13,9 @@ import (
 
 // MailSendCard mail send
 type MailSendCard struct {
-	URL string
-	md  *metadata.BotMetaData
+	URL   string
+	delay time.Duration
+	md    *metadata.BotMetaData
 }
 
 // MailDat mail dat
@@ -27,13 +28,20 @@ type MailDat struct {
 // NewMailSendCard new mail send card
 func NewMailSendCard(md *metadata.BotMetaData) *MailSendCard {
 	return &MailSendCard{
-		URL: "/mail.send",
-		md:  md,
+		URL:   "/mail.send",
+		delay: time.Millisecond,
+		md:    md,
 	}
 }
 
 // GetURL 获取服务器地址
 func (card *MailSendCard) GetURL() string { return card.URL }
+
+// SetDelay 设置卡片之间调用的延迟
+func (card *MailSendCard) SetDelay(delay time.Duration) { card.delay = delay }
+
+// GetDelay 获取卡片之间调用的延迟
+func (card *MailSendCard) GetDelay() time.Duration { return card.delay }
 
 // Marshal 序列化传入消息体
 func (card *MailSendCard) Marshal() []byte {
