@@ -88,27 +88,27 @@ func (bot *Bot) Run() {
 	go func() {
 		for _, s := range bot.Timeline.GetSteps() {
 
-			if s.Loop() {
+			if s.Loop {
 
 				go func() {
 					for {
-						for _, c := range s.GetCards() {
+						for _, c := range s.Step.GetCards() {
 							bot.exec(c)
 							time.Sleep(c.GetDelay())
 						}
 
-						time.Sleep(s.GetDelay())
+						time.Sleep(s.Dura)
 					}
 				}()
 
 			} else {
-				for _, c := range s.GetCards() {
+				for _, c := range s.Step.GetCards() {
 					bot.exec(c)
 					time.Sleep(c.GetDelay())
 				}
 			}
 
-			time.Sleep(s.GetDelay())
+			time.Sleep(s.Dura)
 		}
 
 		if bot.cfg.Report {

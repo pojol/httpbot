@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/pojol/gobot"
 	"github.com/pojol/gobot/sample/metadata"
@@ -41,19 +42,21 @@ func main() {
 		return
 	}
 
-	for i := 0; i < num; i++ {
-		md := &metadata.BotMetaData{}
-		bot := gobot.New(gobot.BotConfig{
-			Addr: target,
-		}, md)
+	//for i := 0; i < num; i++ {
+	md := &metadata.BotMetaData{}
+	bot := gobot.New(gobot.BotConfig{
+		Addr: target,
+	}, md)
 
-		bot.Timeline.AddStep(steps.NewAccLoginStep())
-		bot.Timeline.AddStep(steps.NewMailSendStep(md))
+	bot.Timeline.AddDelayStep(steps.NewAccLoginStep(), time.Millisecond*100)
+	bot.Timeline.AddLoopStep(steps.NewMailSendStep(md))
 
-		bot.Run()
-	}
+	bot.Run()
+	//}
 
 	ch := make(chan os.Signal)
 	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
 	<-ch
+
+	bot.Report()
 }
