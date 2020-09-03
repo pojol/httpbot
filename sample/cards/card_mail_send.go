@@ -37,6 +37,9 @@ func NewMailSendCard(md *metadata.BotMetaData) *MailSendCard {
 // GetURL 获取服务器地址
 func (card *MailSendCard) GetURL() string { return card.URL }
 
+// GetHeader get card header
+func (card *MailSendCard) GetHeader() map[string]string { return nil }
+
 // SetDelay 设置卡片之间调用的延迟
 func (card *MailSendCard) SetDelay(delay time.Duration) { card.delay = delay }
 

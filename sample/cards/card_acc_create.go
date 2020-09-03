@@ -25,6 +25,9 @@ func NewAccCreateCard() *AccCreateCard {
 // GetURL 获取服务器地址
 func (card *AccCreateCard) GetURL() string { return card.URL }
 
+// GetHeader get card header
+func (card *AccCreateCard) GetHeader() map[string]string { return nil }
+
 // SetDelay 设置卡片之间调用的延迟
 func (card *AccCreateCard) SetDelay(delay time.Duration) { card.delay = delay }
 

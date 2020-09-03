@@ -49,6 +49,12 @@ func (bot *Bot) exec(card prefab.ICard) {
 		return
 	}
 	req.Header.Set("Content-type", "application/json")
+	cheader := card.GetHeader()
+	if cheader != nil {
+		for k, v := range cheader {
+			req.Header.Set(k, v)
+		}
+	}
 
 	client := &http.Client{}
 	res, err := client.Do(req)
