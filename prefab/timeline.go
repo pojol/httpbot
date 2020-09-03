@@ -2,33 +2,58 @@ package prefab
 
 import "time"
 
+// TimelineStep timeline step
+type TimelineStep struct {
+	Step *Step
+	Loop bool
+	Dura time.Duration
+}
+
 // Timeline Time-based step bar
 type Timeline struct {
-	steps []*Step
+	steps []*TimelineStep
 }
 
 // AddStep add step in timeline
 func (tl *Timeline) AddStep(step *Step) {
-	tl.steps = append(tl.steps, step)
+	tl.steps = append(tl.steps, &TimelineStep{
+		Step: step,
+		Loop: false,
+		Dura: time.Millisecond,
+	})
+}
+
+// AddDelayStep add need delay step
+func (tl *Timeline) AddDelayStep(step *Step, dura time.Duration) {
+	tl.steps = append(tl.steps, &TimelineStep{
+		Step: step,
+		Loop: false,
+		Dura: dura,
+	})
+}
+
+// AddLoopStep add loop step
+func (tl *Timeline) AddLoopStep(step *Step) {
+	tl.steps = append(tl.steps, &TimelineStep{
+		Step: step,
+		Loop: true,
+		Dura: time.Millisecond * 100,
+	})
 }
 
 // GetSteps get steps
-func (tl *Timeline) GetSteps() []*Step {
+func (tl *Timeline) GetSteps() []*TimelineStep {
 	return tl.steps
 }
 
 // Step A step in the timeline
 type Step struct {
 	cards []ICard
-	loop  bool
-	Dura  time.Duration
 }
 
 // NewStep new step
 func NewStep() *Step {
-	step := &Step{
-		Dura: time.Millisecond * 1,
-	}
+	step := &Step{}
 	return step
 }
 
@@ -37,28 +62,7 @@ func (s *Step) AddCard(card ICard) {
 	s.cards = append(s.cards, card)
 }
 
-// SetDelay set step delay
-func (s *Step) SetDelay(delay time.Duration) {
-	s.Dura = delay
-}
-
-// GetDelay get step delay
-func (s *Step) GetDelay() time.Duration {
-	return s.Dura
-}
-
-// SetLoop set step loop run
-func (s *Step) SetLoop(delay time.Duration) {
-	s.Dura = delay
-	s.loop = true
-}
-
 // GetCards get card
 func (s *Step) GetCards() []ICard {
 	return s.cards
-}
-
-// Loop get loop setting
-func (s *Step) Loop() bool {
-	return s.loop
 }
