@@ -12,6 +12,7 @@ type ICard interface {
 	GetDelay() time.Duration
 	SetDelay(delay time.Duration)
 
+	GetHeader() map[string]string
 	Marshal() []byte
 	Unmarshal(res *http.Response) map[string]interface{}
 }
