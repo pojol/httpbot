@@ -52,7 +52,6 @@ func (card *AccInfoCard) Marshal() []byte {
 }
 
 // Unmarshal 反序列化返回消息
-func (card *AccInfoCard) Unmarshal(res *http.Response) map[string]interface{} {
+func (card *AccInfoCard) Unmarshal(res *http.Response) {
 
-	return nil
 }

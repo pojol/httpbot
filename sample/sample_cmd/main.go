@@ -48,7 +48,7 @@ func main() {
 		Addr: target,
 	}, md)
 
-	bot.Timeline.AddDelayStep(steps.NewAccLoginStep(), time.Millisecond*100)
+	bot.Timeline.AddDelayStep(steps.NewAccLoginStep(md), time.Millisecond*100)
 	bot.Timeline.AddLoopStep(steps.NewMailSendStep(md))
 
 	bot.Run()

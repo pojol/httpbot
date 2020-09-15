@@ -6,19 +6,23 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/pojol/gobot/sample/metadata"
 )
 
 // AccCreateCard 账号创建预制
 type AccCreateCard struct {
 	URL   string
 	delay time.Duration
+	md    *metadata.BotMetaData
 }
 
 // NewAccCreateCard 生成账号创建预制
-func NewAccCreateCard() *AccCreateCard {
+func NewAccCreateCard(md *metadata.BotMetaData) *AccCreateCard {
 	return &AccCreateCard{
 		URL:   "/acc.create",
 		delay: time.Millisecond,
+		md:    md,
 	}
 }
 
@@ -43,7 +47,7 @@ func (card *AccCreateCard) Marshal() []byte {
 }
 
 // Unmarshal 反序列化返回消息
-func (card *AccCreateCard) Unmarshal(res *http.Response) map[string]interface{} {
+func (card *AccCreateCard) Unmarshal(res *http.Response) {
 
 	body, _ := ioutil.ReadAll(res.Body)
 
@@ -70,8 +74,5 @@ func (card *AccCreateCard) Unmarshal(res *http.Response) map[string]interface{} 
 		fmt.Println("card unmarshal err", err)
 	}
 
-	return map[string]interface{}{
-		"acctoken": createRes.Token,
-	}
-
+	card.md.AccToken = createRes.Token
 }

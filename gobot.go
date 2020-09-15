@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/pojol/gobot/botreport"
@@ -23,14 +24,15 @@ type Bot struct {
 
 	cfg BotConfig
 
-	meta    prefab.IMetaData
+	meta    interface{}
 	mapping *mapping.Mapping
 
 	report *botreport.Report
+	sync.Mutex
 }
 
 // New new http test bot
-func New(cfg BotConfig, meta prefab.IMetaData) *Bot {
+func New(cfg BotConfig, meta interface{}) *Bot {
 	return &Bot{
 		cfg:     cfg,
 		meta:    meta,
@@ -67,13 +69,7 @@ func (bot *Bot) exec(card prefab.ICard) {
 
 	if res.StatusCode == 200 {
 		bot.report.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000))
-		m := card.Unmarshal(res)
-		if m != nil {
-			for k := range m {
-				bot.mapping.Set(k, m[k])
-			}
-			bot.meta.Refresh(bot.mapping.GetAll())
-		}
+		card.Unmarshal(res)
 
 	} else {
 		bot.report.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000))
@@ -85,40 +81,56 @@ func (bot *Bot) exec(card prefab.ICard) {
 // Run run bot
 func (bot *Bot) Run() {
 
-	go func() {
-		for _, s := range bot.Timeline.GetSteps() {
+	if bot.cfg.Report {
+		bot.Report()
+	}
 
-			if s.Loop {
+	for _, s := range bot.Timeline.GetSteps() {
 
-				go func() {
-					for {
-						for _, c := range s.Step.GetCards() {
-							bot.exec(c)
-							time.Sleep(c.GetDelay())
-						}
+		if s.Loop {
 
-						time.Sleep(s.Dura)
+			go func() {
+				for {
+					for _, c := range s.Step.GetCards() {
+						bot.exec(c)
+						//time.Sleep(c.GetDelay())
 					}
-				}()
 
-			} else {
-				for _, c := range s.Step.GetCards() {
-					bot.exec(c)
-					time.Sleep(c.GetDelay())
+					//time.Sleep(s.Dura)
 				}
+			}()
+
+		} else {
+			for _, c := range s.Step.GetCards() {
+				bot.exec(c)
+				//time.Sleep(c.GetDelay())
 			}
-
-			time.Sleep(s.Dura)
 		}
 
-		if bot.cfg.Report {
-			bot.Report()
-		}
-	}()
+		//time.Sleep(s.Dura)
+	}
 
+}
+
+// GetReport get report
+func (bot *Bot) GetReport() *botreport.Report {
+	bot.Lock()
+	defer bot.Unlock()
+
+	return bot.report
 }
 
 // Report print report
 func (bot *Bot) Report() {
-	bot.report.Print()
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		for {
+			select {
+			case <-ticker.C:
+				bot.report.Print()
+			default:
+			}
+		}
+
+	}()
 }

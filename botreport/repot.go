@@ -1,6 +1,7 @@
 package botreport
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 )
@@ -33,11 +34,12 @@ func (r *Report) SetInfo(url string, state bool, consume int) {
 
 }
 
-func (r *Report) getSuccRate(url string) string {
-	c := len(r.Info[url])
+// GetSuccRate get succ rate
+func GetSuccRate(info []Info) string {
+	c := len(info)
 	succ := 0
 
-	for _, v := range r.Info[url] {
+	for _, v := range info {
 		if v.State {
 			succ++
 		}
@@ -46,27 +48,49 @@ func (r *Report) getSuccRate(url string) string {
 	return strconv.Itoa(succ) + "/" + strconv.Itoa(c)
 }
 
-func (r *Report) getAverageTime(url string) int {
-	c := len(r.Info[url])
+// GetAverageTime get info average time
+func GetAverageTime(info []Info) (int, error) {
+
+	c := len(info)
+	if c == 0 {
+		return 0, errors.New("not info")
+	}
+
 	sum := 0
-	for _, v := range r.Info[url] {
+	for _, v := range info {
 		sum += v.Consume
 	}
 
-	return int(sum / c)
+	return int(sum / c), nil
+}
+
+// Clear clear
+func (r *Report) Clear() {
+	for k := range r.Info {
+		r.Info[k] = r.Info[k][:0]
+	}
 }
 
 // Print print report
 func (r *Report) Print() {
 
 	for k := range r.Info {
-		t := r.getAverageTime(k)
+
+		t, err := GetAverageTime(r.Info[k])
+		if err != nil {
+			continue
+		}
+
+		rate := GetSuccRate(r.Info[k])
+
 		if t > 100 {
-			fmt.Printf("%-30s Req count %-5d Average time \033[1;31;40m%-5s\033[0m Succ rate %-10s \n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", r.getSuccRate(k))
+			fmt.Printf("%-30s Req count %-5d Average time \033[1;31;40m%-5s\033[0m Succ rate %-10s \n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate)
 		} else {
 
-			fmt.Printf("%-30s Req count %-5d Average time %-5s Succ rate %-10s \n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", r.getSuccRate(k))
+			fmt.Printf("%-30s Req count %-5d Average time %-5s Succ rate %-10s \n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate)
 		}
+
 	}
 
+	r.Clear()
 }
