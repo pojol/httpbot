@@ -97,4 +97,5 @@ func (card *MailSendCard) Unmarshal(res *http.Response) {
 	}
 
 	card.md.AccToken = mailRes.Token
+
 }

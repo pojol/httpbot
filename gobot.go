@@ -68,8 +68,8 @@ func (bot *Bot) exec(card prefab.ICard) {
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
-		bot.report.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000))
 		card.Unmarshal(res)
+		bot.report.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000))
 
 	} else {
 		bot.report.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000))
@@ -96,7 +96,7 @@ func (bot *Bot) Run() {
 						//time.Sleep(c.GetDelay())
 					}
 
-					//time.Sleep(s.Dura)
+					time.Sleep(time.Millisecond)
 				}
 			}()
 
@@ -107,7 +107,7 @@ func (bot *Bot) Run() {
 			}
 		}
 
-		//time.Sleep(s.Dura)
+		time.Sleep(time.Millisecond)
 	}
 
 }

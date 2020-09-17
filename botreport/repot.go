@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 )
 
 // Info request report
@@ -15,6 +16,7 @@ type Info struct {
 // Report robot info
 type Report struct {
 	Info map[string][]Info
+	sync.Mutex
 }
 
 // NewReport new report
@@ -66,6 +68,9 @@ func GetAverageTime(info []Info) (int, error) {
 
 // Clear clear
 func (r *Report) Clear() {
+	r.Lock()
+	defer r.Unlock()
+
 	for k := range r.Info {
 		r.Info[k] = r.Info[k][:0]
 	}
