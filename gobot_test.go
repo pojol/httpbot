@@ -17,7 +17,7 @@ func TestBot(t *testing.T) {
 		Addr: "http://123.207.198.57:2222",
 	}, md)
 
-	bot.Timeline.AddStep(steps.NewAccLoginStep())
+	bot.Timeline.AddStep(steps.NewAccLoginStep(md))
 
 	bot.Run()
 
@@ -30,13 +30,11 @@ func TestMapping(t *testing.T) {
 	bot := New(BotConfig{}, &metadata.BotMetaData{})
 
 	bot.mapping.Set("acctoken", "xxx")
-	bot.meta.Refresh(bot.mapping.GetAll())
 
 	bot.mapping.Set("mails", []metadata.MailDat{
 		{ID: "1", Title: "test1", Content: "content1"},
 		{ID: "2", Title: "test2", Content: "content2"},
 	})
-	bot.meta.Refresh(bot.mapping.GetAll())
 
 	bot.mapping.Print()
 }

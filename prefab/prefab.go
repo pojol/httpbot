@@ -14,10 +14,5 @@ type ICard interface {
 
 	GetHeader() map[string]string
 	Marshal() []byte
-	Unmarshal(res *http.Response) map[string]interface{}
-}
-
-// IMetaData 元数据
-type IMetaData interface {
-	Refresh(meta interface{})
+	Unmarshal(res *http.Response)
 }

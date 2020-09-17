@@ -69,7 +69,7 @@ func (card *MailSendCard) Marshal() []byte {
 }
 
 // Unmarshal 反序列化返回消息
-func (card *MailSendCard) Unmarshal(res *http.Response) map[string]interface{} {
+func (card *MailSendCard) Unmarshal(res *http.Response) {
 
 	body, _ := ioutil.ReadAll(res.Body)
 	resDat := struct {
@@ -96,8 +96,6 @@ func (card *MailSendCard) Unmarshal(res *http.Response) map[string]interface{} {
 		fmt.Println("card unmarshal err", err)
 	}
 
-	return map[string]interface{}{
-		"acctoken": mailRes.Token,
-		"mails":    mailRes.Mails,
-	}
+	card.md.AccToken = mailRes.Token
+
 }
