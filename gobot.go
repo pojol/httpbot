@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pojol/gobot/botreport"
 	"github.com/pojol/gobot/mapping"
 	"github.com/pojol/gobot/prefab"
@@ -20,6 +21,8 @@ type BotConfig struct {
 
 // Bot http bot
 type Bot struct {
+	id string
+
 	Timeline prefab.Timeline
 
 	cfg BotConfig
@@ -27,21 +30,25 @@ type Bot struct {
 	meta    interface{}
 	mapping *mapping.Mapping
 
-	report *botreport.Report
-	sync.Mutex
+	stop bool
+
+	rep *botreport.Report
+	sync.RWMutex
 }
 
 // New new http test bot
 func New(cfg BotConfig, meta interface{}) *Bot {
 	return &Bot{
+		id:      uuid.New().String(),
 		cfg:     cfg,
 		meta:    meta,
-		report:  botreport.NewReport(),
+		rep:     botreport.NewReport(),
 		mapping: mapping.NewMapping(),
 	}
 }
 
 func (bot *Bot) exec(card prefab.ICard) {
+
 	url := bot.cfg.Addr + card.GetURL()
 
 	begin := time.Now().UnixNano()
@@ -62,17 +69,17 @@ func (bot *Bot) exec(card prefab.ICard) {
 	res, err := client.Do(req)
 	if err != nil {
 		fmt.Println("client.Do", err)
-		bot.report.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000))
+		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000))
 		return
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode == 200 {
 		card.Unmarshal(res)
-		bot.report.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000))
+		bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000))
 
 	} else {
-		bot.report.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000))
+		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000))
 		fmt.Println("http error status code", res.Status, "url", url)
 	}
 
@@ -82,7 +89,7 @@ func (bot *Bot) exec(card prefab.ICard) {
 func (bot *Bot) Run() {
 
 	if bot.cfg.Report {
-		bot.Report()
+		bot.report()
 	}
 
 	for _, s := range bot.Timeline.GetSteps() {
@@ -91,12 +98,16 @@ func (bot *Bot) Run() {
 
 			go func() {
 				for {
+					if bot.stop {
+						break
+					}
+
 					for _, c := range s.Step.GetCards() {
 						bot.exec(c)
 						//time.Sleep(c.GetDelay())
 					}
 
-					time.Sleep(time.Millisecond)
+					time.Sleep(time.Millisecond * 100)
 				}
 			}()
 
@@ -112,22 +123,49 @@ func (bot *Bot) Run() {
 
 }
 
-// GetReport get report
-func (bot *Bot) GetReport() *botreport.Report {
+// ID get bot id
+func (bot *Bot) ID() string {
+	return bot.id
+}
+
+// Close close
+func (bot *Bot) Close() {
+	bot.stop = true
+}
+
+// GetReportInfo get report
+func (bot *Bot) GetReportInfo() map[string][]botreport.Info {
+	bot.RLock()
+	defer bot.RUnlock()
+
+	nmap := make(map[string][]botreport.Info)
+	for k, om := range bot.rep.Info {
+		narr := []botreport.Info{}
+		for _, info := range om {
+			narr = append(narr, info)
+		}
+		nmap[k] = narr
+	}
+
+	return nmap
+}
+
+// ClearReportInfo clear report info
+func (bot *Bot) ClearReportInfo() {
 	bot.Lock()
 	defer bot.Unlock()
 
-	return bot.report
+	bot.rep.Clear()
 }
 
 // Report print report
-func (bot *Bot) Report() {
+func (bot *Bot) report() {
 	go func() {
 		ticker := time.NewTicker(time.Second)
 		for {
 			select {
 			case <-ticker.C:
-				bot.report.Print()
+				bot.rep.Print()
 			default:
 			}
 		}
