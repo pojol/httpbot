@@ -30,24 +30,28 @@ type Bot struct {
 	meta    interface{}
 	mapping *mapping.Mapping
 
-	stop bool
+	stop       bool
+	createTime int64
 
 	rep *botreport.Report
-	sync.RWMutex
+	sync.Mutex
 }
 
 // New new http test bot
 func New(cfg BotConfig, meta interface{}) *Bot {
 	return &Bot{
-		id:      uuid.New().String(),
-		cfg:     cfg,
-		meta:    meta,
-		rep:     botreport.NewReport(),
-		mapping: mapping.NewMapping(),
+		id:         uuid.New().String(),
+		cfg:        cfg,
+		meta:       meta,
+		rep:        botreport.NewReport(),
+		mapping:    mapping.NewMapping(),
+		createTime: time.Now().Unix(),
 	}
 }
 
 func (bot *Bot) exec(card prefab.ICard) {
+	bot.Lock()
+	defer bot.Unlock()
 
 	url := bot.cfg.Addr + card.GetURL()
 
@@ -65,8 +69,8 @@ func (bot *Bot) exec(card prefab.ICard) {
 		}
 	}
 
-	client := &http.Client{}
-	res, err := client.Do(req)
+	//client := &http.Client{}
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("client.Do", err)
 		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000))
@@ -135,8 +139,8 @@ func (bot *Bot) Close() {
 
 // GetReportInfo get report
 func (bot *Bot) GetReportInfo() map[string][]botreport.Info {
-	bot.RLock()
-	defer bot.RUnlock()
+	bot.Lock()
+	defer bot.Unlock()
 
 	nmap := make(map[string][]botreport.Info)
 	for k, om := range bot.rep.Info {

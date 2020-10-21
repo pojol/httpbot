@@ -1,9 +1,14 @@
 package prefab
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // TimelineStep timeline step
 type TimelineStep struct {
+	ID   string
 	Step *Step
 	Loop bool
 	Dura time.Duration
@@ -33,12 +38,27 @@ func (tl *Timeline) AddDelayStep(step *Step, dura time.Duration) {
 }
 
 // AddLoopStep add loop step
-func (tl *Timeline) AddLoopStep(step *Step) {
-	tl.steps = append(tl.steps, &TimelineStep{
+func (tl *Timeline) AddLoopStep(step *Step) string {
+
+	ts := &TimelineStep{
+		ID:   uuid.New().String(),
 		Step: step,
 		Loop: true,
 		Dura: time.Millisecond * 100,
-	})
+	}
+	tl.steps = append(tl.steps, ts)
+
+	return ts.ID
+}
+
+// SetStepDura set step dura
+func (tl *Timeline) SetStepDura(id string, dura time.Duration) {
+	for k, v := range tl.steps {
+		if v.ID == id {
+			tl.steps[k].Dura = dura
+			break
+		}
+	}
 }
 
 // GetSteps get steps
