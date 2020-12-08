@@ -10,6 +10,8 @@ import (
 type Info struct {
 	State   bool
 	Consume int
+	ReqSize int64
+	ResSize int64
 }
 
 // Report robot info
@@ -25,17 +27,19 @@ func NewReport() *Report {
 }
 
 // SetInfo set request state & consume
-func (r *Report) SetInfo(url string, state bool, consume int) {
+func (r *Report) SetInfo(url string, state bool, consume int, reqbyt int64, resbyt int64) {
 
 	r.Info[url] = append(r.Info[url], Info{
 		State:   state,
 		Consume: consume,
+		ReqSize: reqbyt,
+		ResSize: resbyt,
 	})
 
 }
 
 // GetSuccRate get succ rate
-func GetSuccRate(info []Info) string {
+func getSuccRate(info []Info) string {
 	c := len(info)
 	succ := 0
 
@@ -48,8 +52,45 @@ func GetSuccRate(info []Info) string {
 	return strconv.Itoa(succ) + "/" + strconv.Itoa(c)
 }
 
+func getReqSize(info []Info) string {
+
+	var s int64
+	var ss string
+
+	for _, v := range info {
+		s += v.ReqSize
+	}
+
+	ks := int(s / 1024)
+	if ks < 1024 {
+		ss = strconv.Itoa(ks) + "kb"
+	} else {
+		ss = strconv.Itoa(int(ks/1024)) + "mb"
+	}
+
+	return ss
+}
+
+func getResSize(info []Info) string {
+	var s int64
+	var ss string
+
+	for _, v := range info {
+		s += v.ResSize
+	}
+
+	ks := int(s / 1024)
+	if ks < 1024 {
+		ss = strconv.Itoa(ks) + "kb"
+	} else {
+		ss = strconv.Itoa(int(ks/1024)) + "mb"
+	}
+
+	return ss
+}
+
 // GetAverageTime get info average time
-func GetAverageTime(info []Info) (int, error) {
+func getAverageTime(info []Info) (int, error) {
 
 	c := len(info)
 	if c == 0 {
@@ -77,21 +118,20 @@ func (r *Report) Print() {
 
 	for k := range r.Info {
 
-		t, err := GetAverageTime(r.Info[k])
+		t, err := getAverageTime(r.Info[k])
 		if err != nil {
 			continue
 		}
 
-		rate := GetSuccRate(r.Info[k])
+		rate := getSuccRate(r.Info[k])
+		reqres := getReqSize(r.Info[k]) + " / " + getResSize(r.Info[k])
 
 		if t > 100 {
-			fmt.Printf("%-30s Req count %-5d Average time \033[1;31;40m%-5s\033[0m Succ rate %-10s \n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate)
+			fmt.Printf("%-30s Req count %-5d Average time \033[1;31;40m%-5s\033[0m Succ rate %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
 		} else {
-
-			fmt.Printf("%-30s Req count %-5d Average time %-5s Succ rate %-10s \n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate)
+			fmt.Printf("%-30s Req count %-5d Average time %-5s Succ rate %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
 		}
 
 	}
 
-	r.Clear()
 }

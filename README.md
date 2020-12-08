@@ -1,5 +1,6 @@
 # gobot
-http test robot
+一个基于线性时间驱动的HTTP测试机器人框架
+
 
 ---
 [![image.png](https://i.postimg.cc/Z5XFtxKH/image.png)](https://postimg.cc/PCz81ZDv)
