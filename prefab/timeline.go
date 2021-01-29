@@ -1,11 +1,13 @@
 package prefab
 
-import "time"
+import (
+	"time"
+)
 
 // TimelineStep timeline step
 type TimelineStep struct {
+	ID   string
 	Step *Step
-	Loop bool
 	Dura time.Duration
 }
 
@@ -18,7 +20,6 @@ type Timeline struct {
 func (tl *Timeline) AddStep(step *Step) {
 	tl.steps = append(tl.steps, &TimelineStep{
 		Step: step,
-		Loop: false,
 		Dura: time.Millisecond,
 	})
 }
@@ -27,18 +28,18 @@ func (tl *Timeline) AddStep(step *Step) {
 func (tl *Timeline) AddDelayStep(step *Step, dura time.Duration) {
 	tl.steps = append(tl.steps, &TimelineStep{
 		Step: step,
-		Loop: false,
 		Dura: dura,
 	})
 }
 
-// AddLoopStep add loop step
-func (tl *Timeline) AddLoopStep(step *Step) {
-	tl.steps = append(tl.steps, &TimelineStep{
-		Step: step,
-		Loop: true,
-		Dura: time.Millisecond * 100,
-	})
+// SetStepDura set step dura
+func (tl *Timeline) SetStepDura(id string, dura time.Duration) {
+	for k, v := range tl.steps {
+		if v.ID == id {
+			tl.steps[k].Dura = dura
+			break
+		}
+	}
 }
 
 // GetSteps get steps
