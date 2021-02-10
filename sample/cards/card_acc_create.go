@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pojol/gobot/sample/metadata"
+	"github.com/pojol/httpbot/sample/metadata"
 )
 
 // AccCreateCard 账号创建预制

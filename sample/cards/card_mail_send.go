@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pojol/gobot/sample/metadata"
+	"github.com/pojol/httpbot/sample/metadata"
 )
 
 // MailSendCard mail send

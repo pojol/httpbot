@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pojol/gobot/sample/metadata"
+	"github.com/pojol/httpbot/sample/metadata"
 )
 
 // AccInfoCard 账号登录预制

@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	bot "github.com/pojol/gobot"
-	"github.com/pojol/gobot/internal"
+	bot "github.com/pojol/httpbot"
+	"github.com/pojol/httpbot/internal"
 )
 
 // CreateBotFunc 创建机器人的工厂方法

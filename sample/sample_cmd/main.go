@@ -7,9 +7,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pojol/gobot"
-	"github.com/pojol/gobot/sample/metadata"
-	"github.com/pojol/gobot/sample/steps"
+	bot "github.com/pojol/httpbot"
+	"github.com/pojol/httpbot/sample/metadata"
+	"github.com/pojol/httpbot/sample/steps"
 )
 
 var (
@@ -44,7 +44,7 @@ func main() {
 
 	//for i := 0; i < num; i++ {
 	md := &metadata.BotMetaData{}
-	bot := gobot.New(gobot.BotConfig{
+	bot := bot.New(bot.BotConfig{
 		Addr: target,
 	}, md)
 

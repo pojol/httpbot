@@ -1,6 +1,6 @@
-module github.com/pojol/gobot
+module github.com/pojol/httpbot
 
-go 1.13
+go 1.15
 
 require (
 	github.com/davecgh/go-spew v1.1.1
@@ -8,6 +8,4 @@ require (
 	github.com/influxdata/influxdb v1.8.3
 	github.com/mitchellh/mapstructure v1.3.3
 	github.com/pmezard/go-difflib v1.0.0
-	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
-	honnef.co/go/tools v0.0.1-2020.1.5
 )
