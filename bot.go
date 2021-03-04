@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pojol/gobot/botreport"
-	"github.com/pojol/gobot/mapping"
-	"github.com/pojol/gobot/prefab"
+	"github.com/pojol/httpbot/botreport"
+	"github.com/pojol/httpbot/mapping"
+	"github.com/pojol/httpbot/prefab"
 )
 
 // BotConfig config
