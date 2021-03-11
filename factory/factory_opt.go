@@ -31,11 +31,6 @@ type Parm struct {
 	// 默认值 FactoryModeStatic
 	mode string
 
-	// strategy 当前机器人工厂在创建机器人时采用的策略函数
-	//
-	// 如果 stragety 未设置，则从注册到factory中的策略中随机抽取一个
-	strategy string
-
 	// addr 目标网管地址
 	addr []string
 
@@ -59,13 +54,6 @@ func WithAddr(addr []string) Option {
 func WithLifeTime(lifetime time.Duration) Option {
 	return func(c *Parm) {
 		c.lifeTime = lifetime
-	}
-}
-
-// WithStrategy 选用策略
-func WithStrategy(strategy string) Option {
-	return func(c *Parm) {
-		c.strategy = strategy
 	}
 }
 

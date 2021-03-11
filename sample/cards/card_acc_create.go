@@ -29,6 +29,9 @@ func NewAccCreateCard(md *metadata.BotMetaData) *AccCreateCard {
 // GetURL 获取服务器地址
 func (card *AccCreateCard) GetURL() string { return card.URL }
 
+// GetClient 获取 http.client
+func (card *AccCreateCard) GetClient() *http.Client { return nil }
+
 // GetHeader get card header
 func (card *AccCreateCard) GetHeader() map[string]string { return nil }
 

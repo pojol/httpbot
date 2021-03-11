@@ -8,6 +8,7 @@ import (
 // ICard 逻辑卡片接口
 type ICard interface {
 	GetURL() string
+	GetClient() *http.Client
 	GetMethod() string
 	GetHeader() map[string]string
 

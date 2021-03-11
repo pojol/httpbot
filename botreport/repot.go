@@ -127,9 +127,9 @@ func (r *Report) Print() {
 		reqres := getReqSize(r.Info[k]) + " / " + getResSize(r.Info[k])
 
 		if t > 100 {
-			fmt.Printf("%-30s Req count %-5d Average time \033[1;31;40m%-5s\033[0m Succ rate %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
+			fmt.Printf("%-60s 请求数 %-5d 耗时 \033[1;31;40m%-5s\033[0m 成功率 %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
 		} else {
-			fmt.Printf("%-30s Req count %-5d Average time %-5s Succ rate %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
+			fmt.Printf("%-60s 请求数 %-5d 耗时 %-5s 成功率 %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
 		}
 
 	}

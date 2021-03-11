@@ -16,6 +16,7 @@ import (
 // BotConfig config
 type BotConfig struct {
 	Addr   string
+	Name   string
 	Report bool
 }
 
@@ -53,11 +54,13 @@ func New(cfg BotConfig, client *http.Client, meta interface{}) *Bot {
 	}
 }
 
-func (bot *Bot) exec(card prefab.ICard) {
+func (bot *Bot) exec(card prefab.ICard, ch chan interface{}) {
 	bot.Lock()
 	defer bot.Unlock()
 
-	url := bot.cfg.Addr + card.GetURL()
+	url := card.GetURL()
+	var err error
+	var res *http.Response
 
 	begin := time.Now().UnixNano()
 	byt := card.Marshal()
@@ -76,9 +79,15 @@ func (bot *Bot) exec(card prefab.ICard) {
 		}
 	}
 
-	res, err := bot.client.Do(req)
+	if card.GetClient() != nil {
+		res, err = card.GetClient().Do(req)
+	} else {
+		res, err = bot.client.Do(req)
+	}
+
 	if err != nil {
-		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
+		fmt.Println("client do err", err.Error())
+		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, 0)
 		return
 	}
 	defer res.Body.Close()
@@ -89,9 +98,11 @@ func (bot *Bot) exec(card prefab.ICard) {
 		bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
 
 	} else {
+		fmt.Println(bot.cfg.Name, "client do status err", res.StatusCode, url)
 		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
 	}
 
+	ch <- 1
 }
 
 // Run run bot
@@ -106,8 +117,9 @@ func (bot *Bot) Run(wg *sync.WaitGroup) {
 					return
 				}
 
-				bot.exec(c)
-				time.Sleep(time.Millisecond * 10)
+				ch := make(chan interface{}, 1)
+				bot.exec(c, ch)
+				<-ch
 			}
 
 		}
@@ -124,6 +136,11 @@ func (bot *Bot) Run(wg *sync.WaitGroup) {
 // ID get bot id
 func (bot *Bot) ID() string {
 	return bot.id
+}
+
+// Name get bot name
+func (bot *Bot) Name() string {
+	return bot.cfg.Name
 }
 
 // GetReprotInfo 获取报告信息

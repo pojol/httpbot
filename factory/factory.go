@@ -23,6 +23,12 @@ const (
 	FactoryModeIncrease = "increase"
 )
 
+// 策略的选取模式
+const (
+	StrategyModeNormal   = "normal"
+	StrategyModePriority = "priority"
+)
+
 type urlDetail struct {
 	reqNum int
 	errNum int
@@ -57,10 +63,17 @@ type Report struct {
 	urlMap map[string]*urlDetail
 }
 
+// StrategyInfo 策略信息
+type StrategyInfo struct {
+	Name string
+	Urls []string
+}
+
 // BotFactory 机器人工厂
 type BotFactory struct {
-	factorys  map[string]CreateBotFunc
-	strategys []string
+	normalFactory   map[string]CreateBotFunc
+	priorityFactory []CreateBotFunc
+	strategys       []StrategyInfo
 
 	parm Parm
 
@@ -70,7 +83,8 @@ type BotFactory struct {
 
 	client *http.Client
 
-	report Report
+	report   Report
+	urlMatch map[string]int
 
 	lock sync.Mutex
 	exit *internal.Switch
@@ -80,18 +94,13 @@ type BotFactory struct {
 func Create(opts ...Option) (*BotFactory, error) {
 
 	p := Parm{
-		frameRate:     time.Second * 1,
-		tickCreateNum: 1,
-		mode:          FactoryModeStatic,
-		lifeTime:      time.Hour,
+		frameRate: time.Second * 1,
+		mode:      FactoryModeStatic,
+		lifeTime:  time.Hour,
 	}
 
 	for _, opt := range opts {
 		opt(&p)
-	}
-
-	if p.strategy == "" {
-		return nil, errors.New("Undefine strategy")
 	}
 
 	if len(p.addr) == 0 {
@@ -99,14 +108,15 @@ func Create(opts ...Option) (*BotFactory, error) {
 	}
 
 	f := &BotFactory{
-		parm:      p,
-		bots:      make(map[string]*bot.Bot),
-		factorys:  make(map[string]CreateBotFunc),
-		exit:      internal.NewSwitch(),
-		beginTime: time.Now(),
+		parm:          p,
+		bots:          make(map[string]*bot.Bot),
+		normalFactory: make(map[string]CreateBotFunc),
+		exit:          internal.NewSwitch(),
+		beginTime:     time.Now(),
 		report: Report{
 			urlMap: make(map[string]*urlDetail),
 		},
+		urlMatch: make(map[string]int),
 	}
 
 	if p.client == nil {
@@ -127,20 +137,37 @@ func (f *BotFactory) Close() {
 }
 
 // Append 添加机器人的创建策略
-func (f *BotFactory) Append(strategy string, cbf CreateBotFunc) {
+func (f *BotFactory) Append(strategy string, cbf CreateBotFunc, mode string, urls []string) {
 
-	if _, ok := f.factorys[strategy]; !ok {
-		f.factorys[strategy] = cbf
-		f.strategys = append(f.strategys, strategy)
+	appendflag := false
+
+	if mode == StrategyModeNormal {
+		if _, ok := f.normalFactory[strategy]; !ok {
+			f.normalFactory[strategy] = cbf
+			appendflag = true
+		}
+	} else if mode == StrategyModePriority {
+		f.priorityFactory = append(f.priorityFactory, cbf)
+		appendflag = true
 	}
 
+	if appendflag {
+		f.strategys = append(f.strategys, StrategyInfo{
+			Name: strategy,
+			Urls: urls,
+		})
+
+		for _, v := range urls {
+			f.urlMatch[v] = 0
+		}
+	}
 }
 
 // Report 输出报告
 func (f *BotFactory) Report() {
 
 	fmt.Println("+--------------------------------------------------------------------------------------------------------+")
-	fmt.Printf("Req url%-40s Req count %-5s Average time %-5s Succ rate %-10s\n", "", "", "", "")
+	fmt.Printf("Req url%-53s Req count %-5s Average time %-5s Succ rate %-10s\n", "", "", "", "")
 
 	arr := []string{}
 	for k := range f.report.urlMap {
@@ -161,7 +188,11 @@ func (f *BotFactory) Report() {
 
 		reqtotal += int64(v.reqNum)
 
-		fmt.Printf("%-47s %-15d %-18s %-10s %-5s\n", sk, v.reqNum, avg, succ, reqsize+" / "+ressize)
+		if _, ok := f.urlMatch[sk]; ok {
+			f.urlMatch[sk]++
+		}
+
+		fmt.Printf("%-60s %-15d %-18s %-10s %-5s\n", sk, v.reqNum, avg, succ, reqsize+" / "+ressize)
 	}
 	fmt.Println("+--------------------------------------------------------------------------------------------------------+")
 
@@ -175,6 +206,13 @@ func (f *BotFactory) Report() {
 	duration := strconv.Itoa(durations) + "s"
 	fmt.Printf("robot : %d req count : %d duration : %s qps : %d errors : %d\n", f.report.botNum, f.report.reqNum, duration, qps, f.report.errNum)
 
+	for k, v := range f.urlMatch {
+		if v > 0 {
+			fmt.Printf("%-60s match %v\n", k, v)
+		} else {
+			fmt.Printf("%-60s \033[1;31;40m%-10s\033[0m\n", k, "not match")
+		}
+	}
 }
 
 func (f *BotFactory) pushReport(bot *bot.Bot) {
@@ -204,27 +242,42 @@ func (f *BotFactory) pushReport(bot *bot.Bot) {
 
 func (f *BotFactory) getRobot() *bot.Bot {
 
+	var creater CreateBotFunc
+
 	if len(f.strategys) <= 0 {
 		return nil
 	}
 
-	if f.parm.strategy == "" { // random
+	// 先从优先池中选取
+	if len(f.priorityFactory) != 0 {
 
-		s := f.strategys[rand.Intn(len(f.strategys))]
-		return f.factorys[s](f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
+		pf := f.priorityFactory[0]
+		f.priorityFactory = f.priorityFactory[1:]
 
+		creater = pf
+	} else {
+		strategys := []string{}
+		for k := range f.normalFactory {
+			strategys = append(strategys, k)
+		}
+
+		if len(strategys) == 0 {
+			panic(errors.New("not normal strategys"))
+		}
+
+		s := strategys[rand.Intn(len(strategys))]
+		creater = f.normalFactory[s]
 	}
 
-	return f.factorys[f.parm.strategy](f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
+	bot := creater(f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
+	return bot
 }
 
 // Run 运行
 func (f *BotFactory) Run() error {
 
-	if f.parm.strategy != "" {
-		if _, ok := f.factorys[f.parm.strategy]; !ok {
-			return errors.New("strategy not exist")
-		}
+	if f.parm.tickCreateNum == 0 {
+		f.parm.tickCreateNum = len(f.strategys)
 	}
 
 	if f.parm.mode == FactoryModeStatic {
