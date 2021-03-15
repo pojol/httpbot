@@ -17,6 +17,7 @@ type Info struct {
 // Report robot info
 type Report struct {
 	Info map[string][]Info
+	err  error
 }
 
 // NewReport new report
@@ -36,6 +37,14 @@ func (r *Report) SetInfo(url string, state bool, consume int, reqbyt int64, resb
 		ResSize: resbyt,
 	})
 
+}
+
+func (r *Report) SetErr(err error) {
+	if r.err != nil {
+		r.err = fmt.Errorf("%v =>\n%w", r.err.Error(), err)
+	} else {
+		r.err = fmt.Errorf("%w", err)
+	}
 }
 
 // GetSuccRate get succ rate
@@ -115,6 +124,13 @@ func (r *Report) Clear() {
 
 // Print print report
 func (r *Report) Print() {
+
+	if r.err != nil {
+
+		fmt.Println(r.err.Error())
+
+		return
+	}
 
 	for k := range r.Info {
 

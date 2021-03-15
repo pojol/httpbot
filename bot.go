@@ -54,13 +54,14 @@ func New(cfg BotConfig, client *http.Client, meta interface{}) *Bot {
 	}
 }
 
-func (bot *Bot) exec(card prefab.ICard, ch chan interface{}) {
+func (bot *Bot) execClient(card prefab.IClientCard, ch chan interface{}) {
 	bot.Lock()
 	defer bot.Unlock()
 
 	url := card.GetURL()
 	var err error
 	var res *http.Response
+	var cheader map[string]string
 
 	begin := time.Now().UnixNano()
 	byt := card.Marshal()
@@ -68,11 +69,10 @@ func (bot *Bot) exec(card prefab.ICard, ch chan interface{}) {
 
 	req, err := http.NewRequest(card.GetMethod(), url, bytes.NewBuffer(byt))
 	if err != nil {
-		fmt.Println("http.NewRequest", err)
-		return
+		goto EXT
 	}
 
-	cheader := card.GetHeader()
+	cheader = card.GetHeader()
 	if cheader != nil {
 		for k, v := range cheader {
 			req.Header.Set(k, v)
@@ -86,20 +86,26 @@ func (bot *Bot) exec(card prefab.ICard, ch chan interface{}) {
 	}
 
 	if err != nil {
-		fmt.Println("client do err", err.Error())
-		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, 0)
-		return
+		bot.rep.SetErr(fmt.Errorf("client do err %v", err.Error()))
+		goto EXT
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode == 200 {
+	if res.StatusCode == http.StatusOK {
 		card.Unmarshal(res)
-
 		bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
-
 	} else {
-		fmt.Println(bot.cfg.Name, "client do status err", res.StatusCode, url)
-		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
+		bot.rep.SetErr(fmt.Errorf("http status %v url = %v err", res.Status, url))
+	}
+EXT:
+	ch <- 1
+}
+
+func (bot *Bot) execAssert(card prefab.IAssertCard, ch chan interface{}) {
+
+	err := card.Do()
+	if err != nil {
+		bot.rep.SetErr(err)
 	}
 
 	ch <- 1
@@ -118,7 +124,17 @@ func (bot *Bot) Run(wg *sync.WaitGroup) {
 				}
 
 				ch := make(chan interface{}, 1)
-				bot.exec(c, ch)
+
+				switch ins := c.(type) {
+				case prefab.IClientCard:
+					bot.execClient(ins, ch)
+					break
+				case prefab.IAssertCard:
+					bot.execAssert(ins, ch)
+					break
+				default:
+				}
+
 				<-ch
 			}
 

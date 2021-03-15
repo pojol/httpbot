@@ -65,7 +65,7 @@ func (card *AccCreateCard) Unmarshal(res *http.Response) {
 		fmt.Println("card unmarshal err", err)
 	}
 
-	if resDat.Code != 200 {
+	if resDat.Code != http.StatusOK {
 		fmt.Println("card err", resDat.Code, resDat.Msg)
 	}
 
