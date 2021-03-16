@@ -119,6 +119,10 @@ func Create(opts ...Option) (*BotFactory, error) {
 		urlMatch: make(map[string]int),
 	}
 
+	for _, v := range p.matchUrl {
+		f.urlMatch[v] = 0
+	}
+
 	if p.client == nil {
 		client := &http.Client{}
 		f.client = client
@@ -137,7 +141,7 @@ func (f *BotFactory) Close() {
 }
 
 // Append 添加机器人的创建策略
-func (f *BotFactory) Append(strategy string, cbf CreateBotFunc, mode string, urls []string) {
+func (f *BotFactory) Append(strategy string, cbf CreateBotFunc, mode string) {
 
 	appendflag := false
 
@@ -154,12 +158,7 @@ func (f *BotFactory) Append(strategy string, cbf CreateBotFunc, mode string, url
 	if appendflag {
 		f.strategys = append(f.strategys, StrategyInfo{
 			Name: strategy,
-			Urls: urls,
 		})
-
-		for _, v := range urls {
-			f.urlMatch[v] = 0
-		}
 	}
 }
 
@@ -210,7 +209,7 @@ func (f *BotFactory) Report() {
 		if v > 0 {
 			fmt.Printf("%-60s match %v\n", k, v)
 		} else {
-			fmt.Printf("%-60s \033[1;31;40m%-10s\033[0m\n", k, "not match")
+			fmt.Printf("%-60s \033[1;31;40m%-10s\033[0m\n", k, "match 0")
 		}
 	}
 }

@@ -34,6 +34,9 @@ type Parm struct {
 	// addr 目标网管地址
 	addr []string
 
+	// matchUrl 匹配路由列表
+	matchUrl []string
+
 	// client http client
 	//
 	// 如果没有调用 WithClient factory会创建一个默认的client
@@ -75,6 +78,13 @@ func WithFrameRate(framerate time.Duration) Option {
 func WithCreateNum(num int) Option {
 	return func(c *Parm) {
 		c.tickCreateNum = num
+	}
+}
+
+// WithMatchUrl 匹配url列表
+func WithMatchUrl(urls []string) Option {
+	return func(c *Parm) {
+		c.matchUrl = urls
 	}
 }
 
