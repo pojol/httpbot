@@ -23,22 +23,27 @@ type ICard interface {
 	GetMethod() string
 	GetHeader() map[string]string
 
-	// InjectParm 注入参数
-	// key : func () interface { return newkeyval }
-	// 用于在 Enter 阶段进行参数注入
-	InjectParm(key string, f func() interface{})
-
-	// InjectAssert 注入断言
-	// name : func () error { return assert.Equal(a , b) }
-	// 用于在 Leave 阶段进行一些判定
-	InjectAssert(name string, f func() error)
-
 	Enter() []byte
 	Leave(res *http.Response) error
 }
 
 type IInject interface {
+	// InjectParm 注入参数
+	// key : func () interface { return newkeyval }
+	// 用于在 Enter 阶段进行参数注入
+	AddInjectParm(key string, f func() interface{})
+
+	// InjectAssert 注入断言
+	// name : func () error { return assert.Equal(a , b) }
+	// 用于在 Leave 阶段进行一些判定
+	AddInjectAssert(name string, f func() error)
+
+	// Inject
+	// 执行参数注入，一般在Enter阶段调用
 	Inject(childptr interface{})
+
+	// Assert
+	// 执行断言判定， 一般在Leave阶段调用
 	Assert() error
 }
 
@@ -46,28 +51,28 @@ type Card struct {
 	parmInject   map[string]func() interface{}
 	assertInject map[string]func() error
 
-	method string
-	header map[string]string
+	Method string
+	Header map[string]string
 }
 
 func NewCardWithConfig() *Card {
 	cp := &Card{
 		parmInject:   make(map[string]func() interface{}),
 		assertInject: make(map[string]func() error),
-		method:       "POST",
-		header:       make(map[string]string),
+		Method:       "POST",
+		Header:       make(map[string]string),
 	}
 
-	cp.header["Content-type"] = "application/json"
+	cp.Header["Content-type"] = "application/json"
 
 	return cp
 }
 
-func (c *Card) InjectParm(key string, f func() interface{}) {
+func (c *Card) AddInjectParm(key string, f func() interface{}) {
 	c.parmInject[key] = f
 }
 
-func (c *Card) InjectAssert(name string, f func() error) {
+func (c *Card) AddInjectAssert(name string, f func() error) {
 	c.assertInject[name] = f
 }
 

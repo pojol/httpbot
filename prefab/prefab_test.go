@@ -18,8 +18,8 @@ type TestCard struct {
 func (tc *TestCard) GetName() string              { return "TestCard" }
 func (tc *TestCard) GetURL() string               { return "" }
 func (tc *TestCard) GetClient() *http.Client      { return nil }
-func (tc *TestCard) GetMethod() string            { return tc.BaseCard.method }
-func (tc *TestCard) GetHeader() map[string]string { return tc.BaseCard.header }
+func (tc *TestCard) GetMethod() string            { return tc.BaseCard.Method }
+func (tc *TestCard) GetHeader() map[string]string { return tc.BaseCard.Header }
 
 func (tc *TestCard) Enter() []byte {
 
@@ -42,17 +42,17 @@ func TestInjectParm(t *testing.T) {
 		BaseCard: NewCardWithConfig(),
 	}
 
-	tc.BaseCard.InjectParm("Testparm1", func() interface{} {
+	tc.BaseCard.AddInjectParm("Testparm1", func() interface{} {
 		return "newtestparm1value"
 	})
-	tc.BaseCard.InjectParm("Testparm2", func() interface{} {
+	tc.BaseCard.AddInjectParm("Testparm2", func() interface{} {
 		return true
 	})
 
-	tc.BaseCard.InjectAssert("assert testparm1", func() error {
+	tc.BaseCard.AddInjectAssert("assert testparm1", func() error {
 		return botassert.Equal(tc.Testparm1, "newtestparm1value")
 	})
-	tc.BaseCard.InjectAssert("assert testparm2", func() error {
+	tc.BaseCard.AddInjectAssert("assert testparm2", func() error {
 		return botassert.Equal(tc.Testparm2, true)
 	})
 

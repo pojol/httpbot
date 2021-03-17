@@ -92,8 +92,12 @@ func (bot *Bot) exec(card prefab.ICard, ch chan interface{}) {
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusOK {
-		card.Leave(res)
-		bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
+		err = card.Leave(res)
+		if err != nil {
+			bot.rep.SetErr(fmt.Errorf("card err %v", err.Error()))
+		} else {
+			bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
+		}
 	} else {
 		bot.rep.SetErr(fmt.Errorf("http status %v url = %v err", res.Status, url))
 	}
