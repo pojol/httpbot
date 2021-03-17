@@ -2,42 +2,15 @@
 一个基于线性时间驱动的HTTP测试机器人框架
 
 
----
-[![image.png](https://i.postimg.cc/Z5XFtxKH/image.png)](https://postimg.cc/PCz81ZDv)
-
+#### Feature
+* 可复用,随意装配的http请求 (card
+* 整个`Bot`生命周期可引用的`metadata`
+* 可注入`参数`（主要用于Enter阶段)`断言`（用于Leave阶段做判定) 到card中
+* 支持工厂模式，可批量创建不同模式，生命周期的`Bot`
+* 格式化的报表输出
 
 ### Quick start
 ```go
 
-func NewMailSendStep(md *metadata.BotMetaData) *prefab.Step {
-
-    step := prefab.NewStep()
-    // set step run state
-	step.SetLoop(time.Second)
-
-    // add prefab logic card
-	step.AddCard(cards.NewMailSendCard(md))
-	step.AddCard(cards.NewAccInfoCard(md))
-
-	return step
-}
-
-func main() {
-    // define metadata
-    type BotMetaData struct {
-        AccToken string
-        Mails []Mail
-    } 
-
-    // new bot
-    bot := gobot.New(BotConfig{
-        ServerAddr : []string {"127.0.0.1"},
-    }, &BotMetaData{})
-
-    // add prefab step
-    bot.Timeline.AddStep(steps.NewMailSendStep())
-
-    bot.Run()
-}
 
 ```

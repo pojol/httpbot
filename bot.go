@@ -54,7 +54,7 @@ func New(cfg BotConfig, client *http.Client, meta interface{}) *Bot {
 	}
 }
 
-func (bot *Bot) execClient(card prefab.IClientCard, ch chan interface{}) {
+func (bot *Bot) exec(card prefab.ICard, ch chan interface{}) {
 	bot.Lock()
 	defer bot.Unlock()
 
@@ -64,7 +64,7 @@ func (bot *Bot) execClient(card prefab.IClientCard, ch chan interface{}) {
 	var cheader map[string]string
 
 	begin := time.Now().UnixNano()
-	byt := card.Marshal()
+	byt := card.Enter()
 	reqsize := int64(len(byt))
 
 	req, err := http.NewRequest(card.GetMethod(), url, bytes.NewBuffer(byt))
@@ -92,22 +92,12 @@ func (bot *Bot) execClient(card prefab.IClientCard, ch chan interface{}) {
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusOK {
-		card.Unmarshal(res)
+		card.Leave(res)
 		bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
 	} else {
 		bot.rep.SetErr(fmt.Errorf("http status %v url = %v err", res.Status, url))
 	}
 EXT:
-	ch <- 1
-}
-
-func (bot *Bot) execAssert(card prefab.IAssertCard, ch chan interface{}) {
-
-	err := card.Do()
-	if err != nil {
-		bot.rep.SetErr(err)
-	}
-
 	ch <- 1
 }
 
@@ -124,17 +114,7 @@ func (bot *Bot) Run(wg *sync.WaitGroup) {
 				}
 
 				ch := make(chan interface{}, 1)
-
-				switch ins := c.(type) {
-				case prefab.IClientCard:
-					bot.execClient(ins, ch)
-					break
-				case prefab.IAssertCard:
-					bot.execAssert(ins, ch)
-					break
-				default:
-				}
-
+				bot.exec(c, ch)
 				<-ch
 			}
 
