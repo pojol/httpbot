@@ -31,6 +31,9 @@ type Parm struct {
 	// 默认值 FactoryModeStatic
 	mode string
 
+	// pickMode 策略选取模式
+	pickMode string
+
 	// addr 目标网管地址
 	addr []string
 
@@ -92,5 +95,11 @@ func WithMatchUrl(urls []string) Option {
 func WithClient(client *http.Client) Option {
 	return func(c *Parm) {
 		c.client = client
+	}
+}
+
+func WithStrategyPick(mode string) Option {
+	return func(c *Parm) {
+		c.pickMode = mode
 	}
 }

@@ -27,6 +27,9 @@ const (
 const (
 	StrategyModeNormal   = "normal"
 	StrategyModePriority = "priority"
+
+	StrategyPickNormal = "normal"
+	StrategyPickRandom = "random"
 )
 
 type urlDetail struct {
@@ -74,6 +77,7 @@ type BotFactory struct {
 	normalFactory   map[string]CreateBotFunc
 	priorityFactory []CreateBotFunc
 	strategys       []StrategyInfo
+	pickCursor      int
 
 	parm Parm
 
@@ -97,6 +101,7 @@ func Create(opts ...Option) (*BotFactory, error) {
 		frameRate: time.Second * 1,
 		mode:      FactoryModeStatic,
 		lifeTime:  time.Hour,
+		pickMode:  StrategyPickNormal,
 	}
 
 	for _, opt := range opts {
@@ -264,8 +269,20 @@ func (f *BotFactory) getRobot() *bot.Bot {
 			panic(errors.New("not normal strategys"))
 		}
 
-		s := strategys[rand.Intn(len(strategys))]
-		creater = f.normalFactory[s]
+		var pickstrategy string
+		if f.parm.pickMode == StrategyPickNormal {
+
+			if f.pickCursor >= len(strategys) {
+				f.pickCursor = 0
+			}
+			pickstrategy = strategys[f.pickCursor]
+			f.pickCursor++
+
+		} else {
+			pickstrategy = strategys[rand.Intn(len(strategys))]
+		}
+
+		creater = f.normalFactory[pickstrategy]
 	}
 
 	bot := creater(f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
