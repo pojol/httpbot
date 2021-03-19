@@ -25,9 +25,6 @@ const (
 
 // 策略的选取模式
 const (
-	StrategyModeNormal   = "normal"
-	StrategyModePriority = "priority"
-
 	StrategyPickNormal = "normal"
 	StrategyPickRandom = "random"
 )
@@ -66,18 +63,15 @@ type Report struct {
 	urlMap map[string]*urlDetail
 }
 
-// StrategyInfo 策略信息
 type StrategyInfo struct {
 	Name string
-	Urls []string
+	F    CreateBotFunc
 }
 
 // BotFactory 机器人工厂
 type BotFactory struct {
-	normalFactory   map[string]CreateBotFunc
-	priorityFactory []CreateBotFunc
-	strategys       []StrategyInfo
-	pickCursor      int
+	strategyLst []StrategyInfo
+	pickCursor  int
 
 	parm Parm
 
@@ -113,11 +107,10 @@ func Create(opts ...Option) (*BotFactory, error) {
 	}
 
 	f := &BotFactory{
-		parm:          p,
-		bots:          make(map[string]*bot.Bot),
-		normalFactory: make(map[string]CreateBotFunc),
-		exit:          internal.NewSwitch(),
-		beginTime:     time.Now(),
+		parm:      p,
+		bots:      make(map[string]*bot.Bot),
+		exit:      internal.NewSwitch(),
+		beginTime: time.Now(),
 		report: Report{
 			urlMap: make(map[string]*urlDetail),
 		},
@@ -146,25 +139,13 @@ func (f *BotFactory) Close() {
 }
 
 // Append 添加机器人的创建策略
-func (f *BotFactory) Append(strategy string, cbf CreateBotFunc, mode string) {
+func (f *BotFactory) Append(strategy string, cbf CreateBotFunc) {
 
-	appendflag := false
+	f.strategyLst = append(f.strategyLst, StrategyInfo{
+		Name: strategy,
+		F:    cbf,
+	})
 
-	if mode == StrategyModeNormal {
-		if _, ok := f.normalFactory[strategy]; !ok {
-			f.normalFactory[strategy] = cbf
-			appendflag = true
-		}
-	} else if mode == StrategyModePriority {
-		f.priorityFactory = append(f.priorityFactory, cbf)
-		appendflag = true
-	}
-
-	if appendflag {
-		f.strategys = append(f.strategys, StrategyInfo{
-			Name: strategy,
-		})
-	}
 }
 
 // Report 输出报告
@@ -210,13 +191,22 @@ func (f *BotFactory) Report() {
 	duration := strconv.Itoa(durations) + "s"
 	fmt.Printf("robot : %d req count : %d duration : %s qps : %d errors : %d\n", f.report.botNum, f.report.reqNum, duration, qps, f.report.errNum)
 
+	coverage := 0
 	for k, v := range f.urlMatch {
 		if v > 0 {
+			coverage++
 			fmt.Printf("%-60s match %v\n", k, v)
 		} else {
 			fmt.Printf("%-60s \033[1;31;40m%-10s\033[0m\n", k, "match 0")
 		}
 	}
+
+	if coverage == len(f.urlMatch) {
+		fmt.Println("coverage ", coverage, "/", len(f.urlMatch))
+	} else {
+		fmt.Printf("%-15s \033[1;31;40m%-10s\033[0m\n", "coverage", strconv.Itoa(coverage)+"/"+strconv.Itoa(len(f.urlMatch)))
+	}
+
 }
 
 func (f *BotFactory) pushReport(bot *bot.Bot) {
@@ -246,43 +236,20 @@ func (f *BotFactory) pushReport(bot *bot.Bot) {
 
 func (f *BotFactory) getRobot() *bot.Bot {
 
-	var creater CreateBotFunc
-
-	if len(f.strategys) <= 0 {
-		return nil
+	if len(f.strategyLst) <= 0 {
+		panic(errors.New("not strategys"))
 	}
 
-	// 先从优先池中选取
-	if len(f.priorityFactory) != 0 {
+	var creater CreateBotFunc
+	if f.parm.pickMode == StrategyPickNormal {
+		if f.pickCursor >= len(f.strategyLst) {
+			f.pickCursor = 0
+		}
+		creater = f.strategyLst[f.pickCursor].F
+		f.pickCursor++
 
-		pf := f.priorityFactory[0]
-		f.priorityFactory = f.priorityFactory[1:]
-
-		creater = pf
 	} else {
-		strategys := []string{}
-		for k := range f.normalFactory {
-			strategys = append(strategys, k)
-		}
-
-		if len(strategys) == 0 {
-			panic(errors.New("not normal strategys"))
-		}
-
-		var pickstrategy string
-		if f.parm.pickMode == StrategyPickNormal {
-
-			if f.pickCursor >= len(strategys) {
-				f.pickCursor = 0
-			}
-			pickstrategy = strategys[f.pickCursor]
-			f.pickCursor++
-
-		} else {
-			pickstrategy = strategys[rand.Intn(len(strategys))]
-		}
-
-		creater = f.normalFactory[pickstrategy]
+		creater = f.strategyLst[rand.Intn(len(f.strategyLst))].F
 	}
 
 	bot := creater(f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
@@ -293,7 +260,7 @@ func (f *BotFactory) getRobot() *bot.Bot {
 func (f *BotFactory) Run() error {
 
 	if f.parm.tickCreateNum == 0 {
-		f.parm.tickCreateNum = len(f.strategys)
+		f.parm.tickCreateNum = len(f.strategyLst)
 	}
 
 	if f.parm.mode == FactoryModeStatic {

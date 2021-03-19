@@ -54,7 +54,7 @@ func New(cfg BotConfig, client *http.Client, meta interface{}) *Bot {
 	}
 }
 
-func (bot *Bot) exec(card prefab.ICard, ch chan interface{}) {
+func (bot *Bot) exec(card prefab.ICard) error {
 	bot.Lock()
 	defer bot.Unlock()
 
@@ -93,22 +93,23 @@ func (bot *Bot) exec(card prefab.ICard, ch chan interface{}) {
 
 	if res.StatusCode == http.StatusOK {
 		err = card.Leave(res)
-		if err != nil {
-			bot.rep.SetErr(fmt.Errorf("card err %v", err.Error()))
-		} else {
+		if err == nil {
 			bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
 		}
 	} else {
-		bot.rep.SetErr(fmt.Errorf("http status %v url = %v err", res.Status, url))
+		err = fmt.Errorf("http status %v url = %v err", res.Status, url)
 	}
 EXT:
-	ch <- 1
+
+	return err
 }
 
 // Run run bot
 func (bot *Bot) Run(wg *sync.WaitGroup) {
 
 	go func() {
+
+		var err error
 
 		for _, s := range bot.Timeline.GetSteps() {
 
@@ -117,9 +118,10 @@ func (bot *Bot) Run(wg *sync.WaitGroup) {
 					return
 				}
 
-				ch := make(chan interface{}, 1)
-				bot.exec(c, ch)
-				<-ch
+				err = bot.exec(c)
+				if err != nil {
+					panic(fmt.Errorf("%v panic err %w", c.GetName(), err))
+				}
 			}
 
 		}

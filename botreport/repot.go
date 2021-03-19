@@ -126,9 +126,7 @@ func (r *Report) Clear() {
 func (r *Report) Print() {
 
 	if r.err != nil {
-
 		fmt.Println(r.err.Error())
-
 		return
 	}
 
