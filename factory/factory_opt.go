@@ -98,6 +98,7 @@ func WithClient(client *http.Client) Option {
 	}
 }
 
+// WithStrategyPick 设置策略的选取模式
 func WithStrategyPick(mode string) Option {
 	return func(c *Parm) {
 		c.pickMode = mode

@@ -5,16 +5,7 @@ import (
 	"reflect"
 )
 
-/* ICard
-┌───────────┬──────────┬──────────┐
-│ construct │  enter   │  leave   │
-└───────────┴──────────┴──────────┘
-
-#
-* construct
-* enter
-* leave
-*/
+// ICard card的抽象接口
 type ICard interface {
 	GetName() string
 
@@ -47,6 +38,7 @@ type IInject interface {
 	Assert() error
 }
 
+// Card 用于抽象出一些公共数据
 type Card struct {
 	parmInject   map[string]func() interface{}
 	assertInject map[string]func() error
@@ -55,6 +47,7 @@ type Card struct {
 	Header map[string]string
 }
 
+// NewCardWithConfig 创建一个新的card
 func NewCardWithConfig() *Card {
 	cp := &Card{
 		parmInject:   make(map[string]func() interface{}),
@@ -68,14 +61,17 @@ func NewCardWithConfig() *Card {
 	return cp
 }
 
+// AddInjectParm 添加一个参数注入
 func (c *Card) AddInjectParm(key string, f func() interface{}) {
 	c.parmInject[key] = f
 }
 
+// AddInjectAssert 添加一个断言注入
 func (c *Card) AddInjectAssert(name string, f func() error) {
 	c.assertInject[name] = f
 }
 
+// Inject 注入新的参数数据
 func (c *Card) Inject(childptr interface{}) {
 	if len(c.parmInject) == 0 {
 		return
@@ -104,6 +100,7 @@ func (c *Card) Inject(childptr interface{}) {
 	}
 }
 
+// Assert 执行断言判定
 func (c *Card) Assert() error {
 	var err error
 	for _, v := range c.assertInject {

@@ -63,6 +63,7 @@ type Report struct {
 	urlMap map[string]*urlDetail
 }
 
+// StrategyInfo 策略信息结构
 type StrategyInfo struct {
 	Name string
 	F    CreateBotFunc
@@ -240,19 +241,19 @@ func (f *BotFactory) getRobot() *bot.Bot {
 		panic(errors.New("not strategys"))
 	}
 
-	var creater CreateBotFunc
+	var creator CreateBotFunc
 	if f.parm.pickMode == StrategyPickNormal {
 		if f.pickCursor >= len(f.strategyLst) {
 			f.pickCursor = 0
 		}
-		creater = f.strategyLst[f.pickCursor].F
+		creator = f.strategyLst[f.pickCursor].F
 		f.pickCursor++
 
 	} else {
-		creater = f.strategyLst[rand.Intn(len(f.strategyLst))].F
+		creator = f.strategyLst[rand.Intn(len(f.strategyLst))].F
 	}
 
-	bot := creater(f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
+	bot := creator(f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
 	return bot
 }
 
