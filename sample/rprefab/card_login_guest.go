@@ -17,7 +17,7 @@ type LoginGuestRes struct {
 	Token string `json:"token"`
 }
 
-// GuestCard 游客登录
+// LoginGuestCard 游客登录
 type LoginGuestCard struct {
 	Base  *prefab.Card
 	URL   string
@@ -35,6 +35,7 @@ func NewGuestLoginCard(md *BotDat) *LoginGuestCard {
 	}
 }
 
+// GetName 获取卡片名
 func (card *LoginGuestCard) GetName() string { return LoginGuest }
 
 // GetURL 获取服务器地址

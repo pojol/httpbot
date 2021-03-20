@@ -39,6 +39,7 @@ func (r *Report) SetInfo(url string, state bool, consume int, reqbyt int64, resb
 
 }
 
+// SetErr 设置错误
 func (r *Report) SetErr(err error) {
 	if r.err != nil {
 		r.err = fmt.Errorf("%v =>\n%w", r.err.Error(), err)
