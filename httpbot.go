@@ -1,4 +1,4 @@
-package bot
+package httpbot
 
 import (
 	"bytes"
@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pojol/httpbot/botreport"
-	"github.com/pojol/httpbot/mapping"
 	"github.com/pojol/httpbot/prefab"
 )
 
@@ -28,8 +27,7 @@ type Bot struct {
 
 	cfg BotConfig
 
-	meta    interface{}
-	mapping *mapping.Mapping
+	meta interface{}
 
 	stop       bool
 	createTime int64
@@ -48,7 +46,6 @@ func New(cfg BotConfig, client *http.Client, meta interface{}) *Bot {
 		cfg:        cfg,
 		meta:       meta,
 		rep:        botreport.NewReport(),
-		mapping:    mapping.NewMapping(),
 		createTime: time.Now().Unix(),
 		client:     client,
 	}
