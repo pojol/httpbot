@@ -1,6 +1,7 @@
-# gobot
-一个基于线性时间驱动的HTTP测试机器人框架
+# httpbot
+一个基于线性时间驱动,可编排的HTTP测试机器人框架
 
+[![image.png](https://i.postimg.cc/3RbpyHvc/image.png)](https://postimg.cc/G8G9NVzF)
 
 #### Feature
 * 可复用,随意装配的http请求 (card
