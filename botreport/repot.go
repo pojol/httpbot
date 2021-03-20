@@ -17,6 +17,7 @@ type Info struct {
 // Report robot info
 type Report struct {
 	Info map[string][]Info
+	err  error
 }
 
 // NewReport new report
@@ -36,6 +37,14 @@ func (r *Report) SetInfo(url string, state bool, consume int, reqbyt int64, resb
 		ResSize: resbyt,
 	})
 
+}
+
+func (r *Report) SetErr(err error) {
+	if r.err != nil {
+		r.err = fmt.Errorf("%v =>\n%w", r.err.Error(), err)
+	} else {
+		r.err = fmt.Errorf("%w", err)
+	}
 }
 
 // GetSuccRate get succ rate
@@ -116,6 +125,11 @@ func (r *Report) Clear() {
 // Print print report
 func (r *Report) Print() {
 
+	if r.err != nil {
+		fmt.Println(r.err.Error())
+		return
+	}
+
 	for k := range r.Info {
 
 		t, err := getAverageTime(r.Info[k])
@@ -127,9 +141,9 @@ func (r *Report) Print() {
 		reqres := getReqSize(r.Info[k]) + " / " + getResSize(r.Info[k])
 
 		if t > 100 {
-			fmt.Printf("%-30s Req count %-5d Average time \033[1;31;40m%-5s\033[0m Succ rate %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
+			fmt.Printf("%-60s 请求数 %-5d 耗时 \033[1;31;40m%-5s\033[0m 成功率 %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
 		} else {
-			fmt.Printf("%-30s Req count %-5d Average time %-5s Succ rate %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
+			fmt.Printf("%-60s 请求数 %-5d 耗时 %-5s 成功率 %-5s %-5s\n", k, len(r.Info[k]), strconv.Itoa(t)+"ms", rate, reqres)
 		}
 
 	}

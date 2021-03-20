@@ -1,4 +1,4 @@
-package bot
+package httpbot
 
 import (
 	"bytes"
@@ -9,13 +9,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pojol/httpbot/botreport"
-	"github.com/pojol/httpbot/mapping"
 	"github.com/pojol/httpbot/prefab"
 )
 
 // BotConfig config
 type BotConfig struct {
 	Addr   string
+	Name   string
 	Report bool
 }
 
@@ -27,8 +27,7 @@ type Bot struct {
 
 	cfg BotConfig
 
-	meta    interface{}
-	mapping *mapping.Mapping
+	meta interface{}
 
 	stop       bool
 	createTime int64
@@ -47,57 +46,67 @@ func New(cfg BotConfig, client *http.Client, meta interface{}) *Bot {
 		cfg:        cfg,
 		meta:       meta,
 		rep:        botreport.NewReport(),
-		mapping:    mapping.NewMapping(),
 		createTime: time.Now().Unix(),
 		client:     client,
 	}
 }
 
-func (bot *Bot) exec(card prefab.ICard) {
+func (bot *Bot) exec(card prefab.ICard) error {
 	bot.Lock()
 	defer bot.Unlock()
 
-	url := bot.cfg.Addr + card.GetURL()
+	url := card.GetURL()
+	var err error
+	var res *http.Response
+	var cheader map[string]string
 
 	begin := time.Now().UnixNano()
-	byt := card.Marshal()
+	byt := card.Enter()
 	reqsize := int64(len(byt))
 
 	req, err := http.NewRequest(card.GetMethod(), url, bytes.NewBuffer(byt))
 	if err != nil {
-		fmt.Println("http.NewRequest", err)
-		return
+		goto EXT
 	}
 
-	cheader := card.GetHeader()
+	cheader = card.GetHeader()
 	if cheader != nil {
 		for k, v := range cheader {
 			req.Header.Set(k, v)
 		}
 	}
 
-	res, err := bot.client.Do(req)
+	if card.GetClient() != nil {
+		res, err = card.GetClient().Do(req)
+	} else {
+		res, err = bot.client.Do(req)
+	}
+
 	if err != nil {
-		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
-		return
+		bot.rep.SetErr(fmt.Errorf("client do err %v", err.Error()))
+		goto EXT
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode == 200 {
-		card.Unmarshal(res)
-
-		bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
-
+	if res.StatusCode == http.StatusOK {
+		err = card.Leave(res)
+		if err == nil {
+			bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
+		}
 	} else {
-		bot.rep.SetInfo(card.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
+		err = fmt.Errorf("http status %v url = %v err", res.Status, url)
 	}
+EXT:
 
+	return err
 }
 
 // Run run bot
 func (bot *Bot) Run(wg *sync.WaitGroup) {
 
 	go func() {
+
+		var err error
 
 		for _, s := range bot.Timeline.GetSteps() {
 
@@ -106,8 +115,10 @@ func (bot *Bot) Run(wg *sync.WaitGroup) {
 					return
 				}
 
-				bot.exec(c)
-				time.Sleep(time.Millisecond * 10)
+				err = bot.exec(c)
+				if err != nil {
+					panic(fmt.Errorf("%v panic err %w", c.GetName(), err))
+				}
 			}
 
 		}
@@ -124,6 +135,11 @@ func (bot *Bot) Run(wg *sync.WaitGroup) {
 // ID get bot id
 func (bot *Bot) ID() string {
 	return bot.id
+}
+
+// Name get bot name
+func (bot *Bot) Name() string {
+	return bot.cfg.Name
 }
 
 // GetReprotInfo 获取报告信息

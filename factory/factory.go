@@ -23,6 +23,12 @@ const (
 	FactoryModeIncrease = "increase"
 )
 
+// 策略的选取模式
+const (
+	StrategyPickNormal = "normal"
+	StrategyPickRandom = "random"
+)
+
 type urlDetail struct {
 	reqNum int
 	errNum int
@@ -57,10 +63,15 @@ type Report struct {
 	urlMap map[string]*urlDetail
 }
 
+type StrategyInfo struct {
+	Name string
+	F    CreateBotFunc
+}
+
 // BotFactory 机器人工厂
 type BotFactory struct {
-	factorys  map[string]CreateBotFunc
-	strategys []string
+	strategyLst []StrategyInfo
+	pickCursor  int
 
 	parm Parm
 
@@ -70,7 +81,8 @@ type BotFactory struct {
 
 	client *http.Client
 
-	report Report
+	report   Report
+	urlMatch map[string]int
 
 	lock sync.Mutex
 	exit *internal.Switch
@@ -80,18 +92,14 @@ type BotFactory struct {
 func Create(opts ...Option) (*BotFactory, error) {
 
 	p := Parm{
-		frameRate:     time.Second * 1,
-		tickCreateNum: 1,
-		mode:          FactoryModeStatic,
-		lifeTime:      time.Hour,
+		frameRate: time.Second * 1,
+		mode:      FactoryModeStatic,
+		lifeTime:  time.Hour,
+		pickMode:  StrategyPickNormal,
 	}
 
 	for _, opt := range opts {
 		opt(&p)
-	}
-
-	if p.strategy == "" {
-		return nil, errors.New("Undefine strategy")
 	}
 
 	if len(p.addr) == 0 {
@@ -101,12 +109,16 @@ func Create(opts ...Option) (*BotFactory, error) {
 	f := &BotFactory{
 		parm:      p,
 		bots:      make(map[string]*bot.Bot),
-		factorys:  make(map[string]CreateBotFunc),
 		exit:      internal.NewSwitch(),
 		beginTime: time.Now(),
 		report: Report{
 			urlMap: make(map[string]*urlDetail),
 		},
+		urlMatch: make(map[string]int),
+	}
+
+	for _, v := range p.matchUrl {
+		f.urlMatch[v] = 0
 	}
 
 	if p.client == nil {
@@ -129,10 +141,10 @@ func (f *BotFactory) Close() {
 // Append 添加机器人的创建策略
 func (f *BotFactory) Append(strategy string, cbf CreateBotFunc) {
 
-	if _, ok := f.factorys[strategy]; !ok {
-		f.factorys[strategy] = cbf
-		f.strategys = append(f.strategys, strategy)
-	}
+	f.strategyLst = append(f.strategyLst, StrategyInfo{
+		Name: strategy,
+		F:    cbf,
+	})
 
 }
 
@@ -140,7 +152,7 @@ func (f *BotFactory) Append(strategy string, cbf CreateBotFunc) {
 func (f *BotFactory) Report() {
 
 	fmt.Println("+--------------------------------------------------------------------------------------------------------+")
-	fmt.Printf("Req url%-40s Req count %-5s Average time %-5s Succ rate %-10s\n", "", "", "", "")
+	fmt.Printf("Req url%-53s Req count %-5s Average time %-5s Succ rate %-10s\n", "", "", "", "")
 
 	arr := []string{}
 	for k := range f.report.urlMap {
@@ -161,7 +173,11 @@ func (f *BotFactory) Report() {
 
 		reqtotal += int64(v.reqNum)
 
-		fmt.Printf("%-47s %-15d %-18s %-10s %-5s\n", sk, v.reqNum, avg, succ, reqsize+" / "+ressize)
+		if _, ok := f.urlMatch[sk]; ok {
+			f.urlMatch[sk]++
+		}
+
+		fmt.Printf("%-60s %-15d %-18s %-10s %-5s\n", sk, v.reqNum, avg, succ, reqsize+" / "+ressize)
 	}
 	fmt.Println("+--------------------------------------------------------------------------------------------------------+")
 
@@ -174,6 +190,22 @@ func (f *BotFactory) Report() {
 
 	duration := strconv.Itoa(durations) + "s"
 	fmt.Printf("robot : %d req count : %d duration : %s qps : %d errors : %d\n", f.report.botNum, f.report.reqNum, duration, qps, f.report.errNum)
+
+	coverage := 0
+	for k, v := range f.urlMatch {
+		if v > 0 {
+			coverage++
+			fmt.Printf("%-60s match %v\n", k, v)
+		} else {
+			fmt.Printf("%-60s \033[1;31;40m%-10s\033[0m\n", k, "match 0")
+		}
+	}
+
+	if coverage == len(f.urlMatch) {
+		fmt.Println("coverage ", coverage, "/", len(f.urlMatch))
+	} else {
+		fmt.Printf("%-15s \033[1;31;40m%-10s\033[0m\n", "coverage", strconv.Itoa(coverage)+"/"+strconv.Itoa(len(f.urlMatch)))
+	}
 
 }
 
@@ -204,27 +236,31 @@ func (f *BotFactory) pushReport(bot *bot.Bot) {
 
 func (f *BotFactory) getRobot() *bot.Bot {
 
-	if len(f.strategys) <= 0 {
-		return nil
+	if len(f.strategyLst) <= 0 {
+		panic(errors.New("not strategys"))
 	}
 
-	if f.parm.strategy == "" { // random
+	var creater CreateBotFunc
+	if f.parm.pickMode == StrategyPickNormal {
+		if f.pickCursor >= len(f.strategyLst) {
+			f.pickCursor = 0
+		}
+		creater = f.strategyLst[f.pickCursor].F
+		f.pickCursor++
 
-		s := f.strategys[rand.Intn(len(f.strategys))]
-		return f.factorys[s](f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
-
+	} else {
+		creater = f.strategyLst[rand.Intn(len(f.strategyLst))].F
 	}
 
-	return f.factorys[f.parm.strategy](f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
+	bot := creater(f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
+	return bot
 }
 
 // Run 运行
 func (f *BotFactory) Run() error {
 
-	if f.parm.strategy != "" {
-		if _, ok := f.factorys[f.parm.strategy]; !ok {
-			return errors.New("strategy not exist")
-		}
+	if f.parm.tickCreateNum == 0 {
+		f.parm.tickCreateNum = len(f.strategyLst)
 	}
 
 	if f.parm.mode == FactoryModeStatic {

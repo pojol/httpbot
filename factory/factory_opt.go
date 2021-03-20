@@ -31,13 +31,14 @@ type Parm struct {
 	// 默认值 FactoryModeStatic
 	mode string
 
-	// strategy 当前机器人工厂在创建机器人时采用的策略函数
-	//
-	// 如果 stragety 未设置，则从注册到factory中的策略中随机抽取一个
-	strategy string
+	// pickMode 策略选取模式
+	pickMode string
 
 	// addr 目标网管地址
 	addr []string
+
+	// matchUrl 匹配路由列表
+	matchUrl []string
 
 	// client http client
 	//
@@ -62,13 +63,6 @@ func WithLifeTime(lifetime time.Duration) Option {
 	}
 }
 
-// WithStrategy 选用策略
-func WithStrategy(strategy string) Option {
-	return func(c *Parm) {
-		c.strategy = strategy
-	}
-}
-
 // WithMode 运行模式
 func WithMode(mode string) Option {
 	return func(c *Parm) {
@@ -90,9 +84,22 @@ func WithCreateNum(num int) Option {
 	}
 }
 
+// WithMatchUrl 匹配url列表
+func WithMatchUrl(urls []string) Option {
+	return func(c *Parm) {
+		c.matchUrl = urls
+	}
+}
+
 // WithClient http client
 func WithClient(client *http.Client) Option {
 	return func(c *Parm) {
 		c.client = client
+	}
+}
+
+func WithStrategyPick(mode string) Option {
+	return func(c *Parm) {
+		c.pickMode = mode
 	}
 }
