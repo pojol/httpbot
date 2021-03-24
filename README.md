@@ -3,7 +3,6 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/pojol/httpbot)](https://goreportcard.com/report/github.com/pojol/httpbot)
 
-[![image.png](https://i.postimg.cc/3RbpyHvc/image.png)](https://postimg.cc/G8G9NVzF)
 
 #### Feature
 * 可复用,随意装配的http请求 (card
@@ -26,7 +25,7 @@
 * Factory
     - 工厂; 用于按指定的方式批量执行bot
 
-### Quick start
+#### Quick start
 ```go
 
 	bf, _ := factory.Create(

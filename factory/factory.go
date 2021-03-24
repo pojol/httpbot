@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"sync"
@@ -12,21 +13,8 @@ import (
 
 	bot "github.com/pojol/httpbot"
 	"github.com/pojol/httpbot/internal"
-)
-
-// CreateBotFunc 创建机器人的工厂方法
-type CreateBotFunc func(addr string, client *http.Client) *bot.Bot
-
-// 机器人的运行模式
-const (
-	FactoryModeStatic   = "static"
-	FactoryModeIncrease = "increase"
-)
-
-// 策略的选取模式
-const (
-	StrategyPickNormal = "normal"
-	StrategyPickRandom = "random"
+	"github.com/pojol/httpbot/internal/color"
+	"github.com/pojol/httpbot/internal/sizewg"
 )
 
 type urlDetail struct {
@@ -76,35 +64,40 @@ type BotFactory struct {
 
 	parm Parm
 
-	beginTime time.Time
+	colorer *color.Color
 
-	bots map[string]*bot.Bot
+	beginTime time.Time
 
 	client *http.Client
 
+	bots map[string]*bot.Bot
+
+	translateCh chan *bot.Bot
+	doneCh      chan string
+	errCh       chan bot.ErrInfo
+
 	report   Report
 	urlMatch map[string]int
+
+	batch sizewg.SizeWaitGroup
 
 	lock sync.Mutex
 	exit *internal.Switch
 }
 
-// Create 构建机器人
+// Create 构建机器人工厂
 func Create(opts ...Option) (*BotFactory, error) {
 
 	p := Parm{
 		frameRate: time.Second * 1,
 		mode:      FactoryModeStatic,
-		lifeTime:  time.Hour,
+		lifeTime:  time.Minute,
 		pickMode:  StrategyPickNormal,
+		Interrupt: true,
 	}
 
 	for _, opt := range opts {
 		opt(&p)
-	}
-
-	if len(p.addr) == 0 {
-		return nil, errors.New("Undefine address")
 	}
 
 	f := &BotFactory{
@@ -115,7 +108,12 @@ func Create(opts ...Option) (*BotFactory, error) {
 		report: Report{
 			urlMap: make(map[string]*urlDetail),
 		},
-		urlMatch: make(map[string]int),
+		urlMatch:    make(map[string]int),
+		translateCh: make(chan *bot.Bot),
+		doneCh:      make(chan string),
+		errCh:       make(chan bot.ErrInfo),
+		colorer:     color.New(),
+		batch:       sizewg.New(1024),
 	}
 
 	for _, v := range p.matchUrl {
@@ -123,8 +121,7 @@ func Create(opts ...Option) (*BotFactory, error) {
 	}
 
 	if p.client == nil {
-		client := &http.Client{}
-		f.client = client
+		f.client = &http.Client{}
 	} else {
 		f.client = p.client
 	}
@@ -135,7 +132,6 @@ func Create(opts ...Option) (*BotFactory, error) {
 // Close 关闭机器人工厂
 func (f *BotFactory) Close() {
 	f.exit.Open()
-
 	//f.client.CloseIdleConnections()
 }
 
@@ -152,8 +148,11 @@ func (f *BotFactory) Append(strategy string, cbf CreateBotFunc) {
 // Report 输出报告
 func (f *BotFactory) Report() {
 
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
 	fmt.Println("+--------------------------------------------------------------------------------------------------------+")
-	fmt.Printf("Req url%-53s Req count %-5s Average time %-5s Succ rate %-10s\n", "", "", "", "")
+	fmt.Printf("Req url%-33s Req count %-5s Average time %-5s Succ rate %-10s\n", "", "", "", "")
 
 	arr := []string{}
 	for k := range f.report.urlMap {
@@ -178,7 +177,8 @@ func (f *BotFactory) Report() {
 			f.urlMatch[sk]++
 		}
 
-		fmt.Printf("%-60s %-15d %-18s %-10s %-5s\n", sk, v.reqNum, avg, succ, reqsize+" / "+ressize)
+		u, _ := url.Parse(sk)
+		fmt.Printf("%-40s %-15d %-18s %-10s %-5s\n", u.Path, v.reqNum, avg, succ, reqsize+" / "+ressize)
 	}
 	fmt.Println("+--------------------------------------------------------------------------------------------------------+")
 
@@ -192,25 +192,28 @@ func (f *BotFactory) Report() {
 	duration := strconv.Itoa(durations) + "s"
 	fmt.Printf("robot : %d req count : %d duration : %s qps : %d errors : %d\n", f.report.botNum, f.report.reqNum, duration, qps, f.report.errNum)
 
-	coverage := 0
-	for k, v := range f.urlMatch {
-		if v > 0 {
-			coverage++
-			fmt.Printf("%-60s match %v\n", k, v)
-		} else {
-			fmt.Printf("%-60s \033[1;31;40m%-10s\033[0m\n", k, "match 0")
+	if len(f.urlMatch) != 0 {
+		coverage := 0
+		for k, v := range f.urlMatch {
+			if v > 0 {
+				coverage++
+				f.colorer.Printf("%-60s match %v\n", k, v)
+			} else {
+				f.colorer.Printf("%-60s match %s\n", k, color.Red("0"))
+			}
 		}
-	}
 
-	if coverage == len(f.urlMatch) {
-		fmt.Println("coverage ", coverage, "/", len(f.urlMatch))
-	} else {
-		fmt.Printf("%-15s \033[1;31;40m%-10s\033[0m\n", "coverage", strconv.Itoa(coverage)+"/"+strconv.Itoa(len(f.urlMatch)))
+		if coverage == len(f.urlMatch) {
+			f.colorer.Printf("coverage %v / %v\n", coverage, len(f.urlMatch))
+		} else {
+			f.colorer.Printf("coverage %v / %v\n", coverage, color.Red(len(f.urlMatch)))
+		}
 	}
 
 }
 
 func (f *BotFactory) pushReport(bot *bot.Bot) {
+
 	f.report.botNum++
 	robotReport := bot.GetReprotInfo()
 
@@ -237,6 +240,9 @@ func (f *BotFactory) pushReport(bot *bot.Bot) {
 
 func (f *BotFactory) getRobot() *bot.Bot {
 
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
 	if len(f.strategyLst) <= 0 {
 		panic(errors.New("not strategys"))
 	}
@@ -253,12 +259,14 @@ func (f *BotFactory) getRobot() *bot.Bot {
 		creator = f.strategyLst[rand.Intn(len(f.strategyLst))].F
 	}
 
-	bot := creator(f.parm.addr[rand.Intn(len(f.parm.addr))], f.client)
+	bot := creator("", f.client)
 	return bot
 }
 
 // Run 运行
 func (f *BotFactory) Run() error {
+
+	go f.router()
 
 	if f.parm.tickCreateNum == 0 {
 		f.parm.tickCreateNum = len(f.strategyLst)
@@ -276,22 +284,72 @@ func (f *BotFactory) Run() error {
 	return nil
 }
 
+func (f *BotFactory) push(bot *bot.Bot) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	f.bots[bot.ID()] = bot
+}
+
+func (f *BotFactory) pop(id string) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	if _, ok := f.bots[id]; ok {
+		f.pushReport(f.bots[id])
+		delete(f.bots, id)
+	}
+}
+
+func (f *BotFactory) doerr(id string, err error) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	if f.parm.Interrupt {
+		panic(err)
+	}
+
+	if _, ok := f.bots[id]; ok {
+		delete(f.bots, id)
+
+		f.report.botNum++
+	}
+
+}
+
+func (f *BotFactory) router() {
+
+	for {
+		select {
+		case bot := <-f.translateCh:
+			f.batch.Enter()
+			f.push(bot)
+			bot.Run(f.doneCh, f.errCh)
+		case id := <-f.doneCh:
+			f.batch.Leave()
+			f.pop(id)
+		case err := <-f.errCh:
+			f.batch.Leave()
+			f.doerr(err.ID, err.Err)
+		case <-f.exit.Done():
+			goto ext
+		}
+	}
+
+ext:
+
+	fmt.Println("closed")
+	return
+}
+
 func (f *BotFactory) static() {
 
-	var wg sync.WaitGroup
-
 	for i := 0; i < f.parm.tickCreateNum; i++ {
-		bot := f.getRobot()
-		f.bots[bot.ID()] = bot
-		wg.Add(1)
-		bot.Run(&wg)
+		f.translateCh <- f.getRobot()
 	}
 
-	wg.Wait()
-	for _, bot := range f.bots {
-		f.pushReport(bot)
-	}
-	f.Report()
+	f.batch.Wait()
+
 }
 
 func (f *BotFactory) increase() {
@@ -308,13 +366,7 @@ func (f *BotFactory) increase() {
 					break
 				}
 
-				for i := 0; i < f.parm.tickCreateNum; i++ {
-
-					bot := f.getRobot()
-					bot.Run(nil)
-
-					f.bots[bot.ID()] = bot
-				}
+				f.static()
 
 			case <-f.exit.Done():
 			}
