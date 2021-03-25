@@ -2,7 +2,6 @@
 一个基于线性时间驱动, 可编排的HTTP测试机器人框架
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/pojol/httpbot)](https://goreportcard.com/report/github.com/pojol/httpbot)
-
 [![Doc Card](https://img.shields.io/badge/httpbot-doc-2ca5e0?style=flat&logo=appveyor)](https://pojol.gitbook.io/httpbot/)
 
 
