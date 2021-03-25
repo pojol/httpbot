@@ -44,10 +44,10 @@ func TestMain(m *testing.M) {
 	}))
 	defer srv.Close()
 
-	bf, _ = Create(WithCreateNum(0), WithClient(&http.Client{}), WithMatchUrl([]string{}))
+	bf, _ = Create(WithCreateNum(0), WithClient(&http.Client{}), WithRunMode(FactoryModeIncrease))
 	bf.Append("benchmark_static", func(url string, client *http.Client) *httpbot.Bot {
 		md, _ := prefab.NewBotData()
-		bot := httpbot.New("benchmark_bot", client, md)
+		bot := httpbot.New(md, client, httpbot.WithPrintReprot(false))
 
 		step := timeline.NewStep()
 		step.AddCard(&BCard{
@@ -65,7 +65,6 @@ func TestMain(m *testing.M) {
 
 	m.Run()
 	bf.Close()
-	bf.Report()
 }
 
 // BenchmarkFactoryStatic-4   	   20532	     52667 ns/op

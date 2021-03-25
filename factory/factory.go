@@ -285,27 +285,33 @@ func (f *BotFactory) Run() error {
 }
 
 func (f *BotFactory) push(bot *bot.Bot) {
+	f.batch.Add()
+
 	f.bots[bot.ID()] = bot
 }
 
-func (f *BotFactory) pop(id string) {
-	if _, ok := f.bots[id]; ok {
-		f.pushReport(f.bots[id])
-		delete(f.bots, id)
-	}
-}
+func (f *BotFactory) pop(id string, err error) {
+	f.batch.Done()
 
-func (f *BotFactory) doerr(id string, err error) {
-
-	if f.parm.Interrupt {
+	if err != nil && f.parm.Interrupt {
 		panic(err)
 	}
 
 	if _, ok := f.bots[id]; ok {
+
+		if err == nil {
+			f.pushReport(f.bots[id])
+		} else {
+			f.colorer.Printf("%v\n", color.Red(err.Error()))
+		}
+
 		delete(f.bots, id)
-		f.report.botNum++
+
 	}
 
+	if len(f.bots) == 0 && f.parm.mode == FactoryModeStatic {
+		f.exit.Open()
+	}
 }
 
 func (f *BotFactory) router() {
@@ -313,23 +319,22 @@ func (f *BotFactory) router() {
 	for {
 		select {
 		case bot := <-f.translateCh:
-			f.batch.Add()
 			f.push(bot)
 			bot.Run(f.doneCh, f.errCh)
 		case id := <-f.doneCh:
-			f.batch.Done()
-			f.pop(id)
+			f.pop(id, nil)
 		case err := <-f.errCh:
-			f.batch.Done()
-			f.doerr(err.ID, err.Err)
+			f.pop(err.ID, err.Err)
 		case <-f.exit.Done():
 			goto ext
 		}
 	}
 
 ext:
+	// clean
+	// report
+	f.Report()
 
-	fmt.Println("closed")
 	return
 }
 
@@ -360,15 +365,6 @@ func (f *BotFactory) increase() {
 				f.static()
 
 			case <-f.exit.Done():
-			}
-
-			if f.exit.HasOpend() {
-				for _, bot := range f.bots {
-					bot.Close()
-					f.pushReport(bot)
-				}
-				f.Report()
-				return
 			}
 		}
 

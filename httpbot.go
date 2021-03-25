@@ -21,12 +21,13 @@ type ErrInfo struct {
 
 // Bot HTTP测试机器人
 type Bot struct {
-	id       string
-	name     string
-	Timeline timeline.Timeline
+	id string
 
-	// 通用的http client，如果http request 的地址有区别，可以通过自定义 card.GetClient() 接口，来改变指向
+	parm Parm
+
 	client *http.Client
+
+	Timeline timeline.Timeline
 
 	// 用于生成测试阶段的报告
 	rep *report.Report
@@ -40,16 +41,28 @@ type Bot struct {
 }
 
 // New new http test bot
-func New(name string, client *http.Client, meta interface{}) *Bot {
+func New(meta interface{}, client *http.Client, opts ...Option) *Bot {
+
+	p := Parm{
+		PrintReprot: true,
+	}
+	for _, opt := range opts {
+		opt(&p)
+	}
+
+	if client == nil {
+		panic(fmt.Errorf("client is unavailable"))
+	}
 
 	return &Bot{
 		id:         uuid.New().String(),
-		name:       name,
+		parm:       p,
+		client:     client,
 		meta:       meta,
 		rep:        report.NewReport(),
 		createTime: time.Now().Unix(),
-		client:     client,
 	}
+
 }
 
 func (bot *Bot) exec(c card.ICard) error {
@@ -118,7 +131,7 @@ func (bot *Bot) Run(doneCh chan string, errCh chan ErrInfo) {
 				if err != nil {
 					errCh <- ErrInfo{
 						ID:  bot.id,
-						Err: fmt.Errorf("%v %w", c.GetName(), err),
+						Err: fmt.Errorf("%v err -> %w", c.GetName(), err),
 					}
 					return
 				}
@@ -126,7 +139,10 @@ func (bot *Bot) Run(doneCh chan string, errCh chan ErrInfo) {
 
 		}
 
-		//bot.rep.Print()
+		if bot.parm.PrintReprot {
+			bot.rep.Print()
+		}
+
 		bot.Close()
 		doneCh <- bot.id
 	}()
@@ -140,7 +156,7 @@ func (bot *Bot) ID() string {
 
 // Name get bot name
 func (bot *Bot) Name() string {
-	return bot.name
+	return bot.parm.Name
 }
 
 // GetReprotInfo 获取报告信息

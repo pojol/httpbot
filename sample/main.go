@@ -92,7 +92,8 @@ func main() {
 			panic(err)
 		}
 
-		bot := httpbot.New("default", client, md)
+		bot := httpbot.New(md, client,
+			httpbot.WithName("default"))
 
 		bot.Timeline.AddStep(sstep.NewDefaultStep(md))
 
