@@ -1,4 +1,4 @@
-package rprefab
+package prefab
 
 // request url
 const (

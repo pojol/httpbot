@@ -2,8 +2,8 @@
 一个基于线性时间驱动, 可编排的HTTP测试机器人框架
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/pojol/httpbot)](https://goreportcard.com/report/github.com/pojol/httpbot)
+[![Doc Card](https://img.shields.io/badge/httpbot-doc-2ca5e0?style=flat&logo=appveyor)](https://pojol.gitbook.io/httpbot/)
 
-[![image.png](https://i.postimg.cc/3RbpyHvc/image.png)](https://postimg.cc/G8G9NVzF)
 
 #### Feature
 * 可复用,随意装配的http请求 (card
@@ -26,34 +26,33 @@
 * Factory
     - 工厂; 用于按指定的方式批量执行bot
 
-### Quick start
+#### Quick start
 ```go
 
-	bf, _ := factory.Create(
-		factory.WithAddr([]string{targeturl}),
-		factory.WithCreateNum(0),
-		factory.WithClient(client),
-	)
-	defer bf.Close()
+bf, _ := factory.Create()
+defer bf.Close()
 
-	bf.Append("default", func(url string, client *http.Client) *httpbot.Bot {
-		md, err := rprefab.NewBotData()
-		if err != nil {
-			panic(err)
-		}
+bf.Append("default", func(url string, client *http.Client) *httpbot.Bot {
+	md, err := rprefab.NewBotData()
+	if err != nil {
+		panic(err)
+	}
 
-		bot := httpbot.New(httpbot.BotConfig{
-			Name:   "default bot",
-			Addr:   url,
-			Report: false,
-		}, client, md)
+	bot := httpbot.New(httpbot.BotConfig{
+		Name:   "default bot",
+		Addr:   url,
+		Report: false,
+	}, client, md)
 
-		bot.Timeline.AddStep(rprefab.NewDefaultStep(md))
+	defaultStep := prefab.NewStep()
+	defaultStep.AddCard(prefab.NewGuestLoginCard(md))
 
-		return bot
-	})
+	bot.Timeline.AddStep(step)
 
-	bf.Run()
+	return bot
+})
+
+bf.Run()
 
 ```
 

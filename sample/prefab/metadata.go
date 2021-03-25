@@ -1,4 +1,4 @@
-package rprefab
+package prefab
 
 // BotDat bot的metadata
 type BotDat struct {

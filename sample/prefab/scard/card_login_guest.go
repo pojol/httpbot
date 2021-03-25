@@ -1,4 +1,4 @@
-package rprefab
+package scard
 
 import (
 	"encoding/json"
@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/pojol/httpbot/assert"
-	"github.com/pojol/httpbot/prefab"
+	"github.com/pojol/httpbot/card"
+	"github.com/pojol/httpbot/sample/prefab"
 )
 
 // LoginGuestRes 游客登录返回
@@ -19,24 +20,24 @@ type LoginGuestRes struct {
 
 // LoginGuestCard 游客登录
 type LoginGuestCard struct {
-	Base  *prefab.Card
+	Base  *card.Card
 	URL   string
 	delay time.Duration
-	md    *BotDat
+	md    *prefab.BotDat
 }
 
 // NewGuestLoginCard 生成账号创建预制
-func NewGuestLoginCard(md *BotDat) *LoginGuestCard {
+func NewGuestLoginCard(md *prefab.BotDat) *LoginGuestCard {
 	return &LoginGuestCard{
-		Base:  prefab.NewCardWithConfig(),
-		URL:   Urls[LoginGuest],
+		Base:  card.NewCardWithConfig(),
+		URL:   prefab.Urls[prefab.LoginGuest],
 		delay: time.Millisecond,
 		md:    md,
 	}
 }
 
 // GetName 获取卡片名
-func (card *LoginGuestCard) GetName() string { return LoginGuest }
+func (card *LoginGuestCard) GetName() string { return prefab.LoginGuest }
 
 // GetURL 获取服务器地址
 func (card *LoginGuestCard) GetURL() string { return card.URL }

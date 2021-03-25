@@ -3,97 +3,110 @@ package httpbot
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pojol/httpbot/botreport"
-	"github.com/pojol/httpbot/prefab"
+	"github.com/pojol/httpbot/card"
+	"github.com/pojol/httpbot/report"
+	"github.com/pojol/httpbot/timeline"
 )
 
-// BotConfig config
-type BotConfig struct {
-	Addr   string
-	Name   string
-	Report bool
+type ErrInfo struct {
+	ID  string
+	Err error
 }
 
-// Bot http bot
+// Bot HTTP测试机器人
 type Bot struct {
 	id string
 
-	Timeline prefab.Timeline
-
-	cfg BotConfig
-
-	meta interface{}
-
-	stop       bool
-	createTime int64
+	parm Parm
 
 	client *http.Client
 
-	rep *botreport.Report
-	sync.Mutex
+	Timeline timeline.Timeline
+
+	// 用于生成测试阶段的报告
+	rep *report.Report
+
+	// 元数据，用于保存整个http bot 测试阶段的数据
+	meta interface{}
+
+	createTime int64
+
+	stop bool
 }
 
 // New new http test bot
-func New(cfg BotConfig, client *http.Client, meta interface{}) *Bot {
+func New(meta interface{}, client *http.Client, opts ...Option) *Bot {
+
+	p := Parm{
+		PrintReprot: true,
+	}
+	for _, opt := range opts {
+		opt(&p)
+	}
+
+	if client == nil {
+		panic(fmt.Errorf("client is unavailable"))
+	}
 
 	return &Bot{
 		id:         uuid.New().String(),
-		cfg:        cfg,
-		meta:       meta,
-		rep:        botreport.NewReport(),
-		createTime: time.Now().Unix(),
+		parm:       p,
 		client:     client,
+		meta:       meta,
+		rep:        report.NewReport(),
+		createTime: time.Now().Unix(),
 	}
+
 }
 
-func (bot *Bot) exec(card prefab.ICard) error {
-	bot.Lock()
-	defer bot.Unlock()
+func (bot *Bot) exec(c card.ICard) error {
 
-	url := card.GetURL()
+	url := c.GetURL()
 	var err error
 	var res *http.Response
 	var cheader map[string]string
 
 	begin := time.Now().UnixNano()
-	byt := card.Enter()
+	byt := c.Enter()
 	reqsize := int64(len(byt))
 
-	req, err := http.NewRequest(card.GetMethod(), url, bytes.NewBuffer(byt))
+	req, err := http.NewRequest(c.GetMethod(), url, bytes.NewBuffer(byt))
 	if err != nil {
 		goto EXT
 	}
 
-	cheader = card.GetHeader()
+	cheader = c.GetHeader()
 	if cheader != nil {
 		for k, v := range cheader {
 			req.Header.Set(k, v)
 		}
 	}
 
-	if card.GetClient() != nil {
-		res, err = card.GetClient().Do(req)
+	if c.GetClient() != nil {
+		res, err = c.GetClient().Do(req)
 	} else {
 		res, err = bot.client.Do(req)
 	}
 
 	if err != nil {
-		bot.rep.SetErr(fmt.Errorf("client do err %v", err.Error()))
 		goto EXT
 	}
 	defer res.Body.Close()
+	req.Body.Close()
 
 	if res.StatusCode == http.StatusOK {
-		err = card.Leave(res)
+		err = c.Leave(res)
 		if err == nil {
-			bot.rep.SetInfo(card.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
+			bot.rep.SetInfo(c.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
 		}
 	} else {
+		io.Copy(ioutil.Discard, res.Body)
 		err = fmt.Errorf("http status %v url = %v err", res.Status, url)
 	}
 EXT:
@@ -102,32 +115,36 @@ EXT:
 }
 
 // Run run bot
-func (bot *Bot) Run(wg *sync.WaitGroup) {
+func (bot *Bot) Run(doneCh chan string, errCh chan ErrInfo) {
 
 	go func() {
-
 		var err error
 
 		for _, s := range bot.Timeline.GetSteps() {
 
-			for _, c := range s.Step.GetCards() {
+			for _, c := range s.GetCards() {
 				if bot.stop {
 					return
 				}
 
 				err = bot.exec(c)
 				if err != nil {
-					panic(fmt.Errorf("%v panic err %w", c.GetName(), err))
+					errCh <- ErrInfo{
+						ID:  bot.id,
+						Err: fmt.Errorf("%v err -> %w", c.GetName(), err),
+					}
+					return
 				}
 			}
 
 		}
 
-		bot.rep.Print()
-		bot.Close()
-		if wg != nil {
-			wg.Done()
+		if bot.parm.PrintReprot {
+			bot.rep.Print()
 		}
+
+		bot.Close()
+		doneCh <- bot.id
 	}()
 
 }
@@ -139,17 +156,14 @@ func (bot *Bot) ID() string {
 
 // Name get bot name
 func (bot *Bot) Name() string {
-	return bot.cfg.Name
+	return bot.parm.Name
 }
 
 // GetReprotInfo 获取报告信息
-func (bot *Bot) GetReprotInfo() map[string][]botreport.Info {
-	bot.Mutex.Lock()
-	defer bot.Mutex.Unlock()
-
-	nmap := make(map[string][]botreport.Info)
+func (bot *Bot) GetReprotInfo() map[string][]report.Info {
+	nmap := make(map[string][]report.Info)
 	for k, om := range bot.rep.Info {
-		narr := []botreport.Info{}
+		narr := []report.Info{}
 		for _, info := range om {
 			narr = append(narr, info)
 		}
@@ -161,10 +175,7 @@ func (bot *Bot) GetReprotInfo() map[string][]botreport.Info {
 }
 
 // GetReport 获取报告指针
-func (bot *Bot) GetReport() *botreport.Report {
-	bot.Mutex.Lock()
-	defer bot.Mutex.Unlock()
-
+func (bot *Bot) GetReport() *report.Report {
 	return bot.rep
 }
 
