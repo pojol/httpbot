@@ -118,7 +118,11 @@ func Create(opts ...Option) (*BotFactory, error) {
 	}
 
 	for _, v := range p.matchUrl {
-		f.urlMatch[v] = 0
+		u, err := url.Parse(v)
+		if err != nil {
+			panic(err)
+		}
+		f.urlMatch[u.Path] = 0
 	}
 
 	if p.client == nil {
@@ -164,7 +168,6 @@ func (f *BotFactory) Report() {
 	var reqtotal int64
 
 	for _, sk := range arr {
-
 		v := f.report.urlMap[sk]
 		avg := strconv.Itoa(int(v.avgNum/int64(v.reqNum))) + "ms"
 		succ := strconv.Itoa(v.reqNum-v.errNum) + "/" + strconv.Itoa(v.reqNum)
@@ -198,9 +201,9 @@ func (f *BotFactory) Report() {
 		for k, v := range f.urlMatch {
 			if v > 0 {
 				coverage++
-				f.colorer.Printf("%-60s match %v\n", k, v)
+				f.colorer.Printf("%-60s match\n", k)
 			} else {
-				f.colorer.Printf("%-60s match %s\n", k, color.Red("0"))
+				f.colorer.Printf("%-60s %s\n", k, color.Red("not match"))
 			}
 		}
 
