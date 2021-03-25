@@ -3,6 +3,8 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/pojol/httpbot)](https://goreportcard.com/report/github.com/pojol/httpbot)
 
+[![Doc Card](https://img.shields.io/badge/httpbot-doc-2ca5e0?style=flat&logo=appveyor)](https://pojol.gitbook.io/httpbot/)
+
 
 #### Feature
 * 可复用,随意装配的http请求 (card
@@ -28,30 +30,30 @@
 #### Quick start
 ```go
 
-	bf, _ := factory.Create()
-	defer bf.Close()
+bf, _ := factory.Create()
+defer bf.Close()
 
-	bf.Append("default", func(url string, client *http.Client) *httpbot.Bot {
-		md, err := rprefab.NewBotData()
-		if err != nil {
-			panic(err)
-		}
+bf.Append("default", func(url string, client *http.Client) *httpbot.Bot {
+	md, err := rprefab.NewBotData()
+	if err != nil {
+		panic(err)
+	}
 
-		bot := httpbot.New(httpbot.BotConfig{
-			Name:   "default bot",
-			Addr:   url,
-			Report: false,
-		}, client, md)
+	bot := httpbot.New(httpbot.BotConfig{
+		Name:   "default bot",
+		Addr:   url,
+		Report: false,
+	}, client, md)
 
-		defaultStep := prefab.NewStep()
-		defaultStep.AddCard(prefab.NewGuestLoginCard(md))
+	defaultStep := prefab.NewStep()
+	defaultStep.AddCard(prefab.NewGuestLoginCard(md))
 
-		bot.Timeline.AddStep(step)
+	bot.Timeline.AddStep(step)
 
-		return bot
-	})
+	return bot
+})
 
-	bf.Run()
+bf.Run()
 
 ```
 
