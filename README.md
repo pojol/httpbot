@@ -4,8 +4,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/pojol/httpbot)](https://goreportcard.com/report/github.com/pojol/httpbot)
 [![Doc Card](https://img.shields.io/badge/httpbot-doc-2ca5e0?style=flat&logo=appveyor)](https://pojol.gitbook.io/httpbot/)
 
-
-<img src="https://postimg.cc/hzzv4sFJ" width="600">
+<div align="center">
+	<img src="https://postimg.cc/hzzv4sFJg" alt="img" width="600">
+</div>
 
 #### Feature
 * 可复用,随意装配的http请求 (card
