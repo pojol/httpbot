@@ -5,6 +5,8 @@
 [![Doc Card](https://img.shields.io/badge/httpbot-doc-2ca5e0?style=flat&logo=appveyor)](https://pojol.gitbook.io/httpbot/)
 
 
+<img src="https://postimg.cc/hzzv4sFJ" width="600">
+
 #### Feature
 * 可复用,随意装配的http请求 (card
 * 整个`Bot`生命周期可引用的`metadata`
