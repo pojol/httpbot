@@ -28,11 +28,7 @@
 #### Quick start
 ```go
 
-	bf, _ := factory.Create(
-		factory.WithAddr([]string{targeturl}),
-		factory.WithCreateNum(0),
-		factory.WithClient(client),
-	)
+	bf, _ := factory.Create()
 	defer bf.Close()
 
 	bf.Append("default", func(url string, client *http.Client) *httpbot.Bot {
@@ -47,7 +43,10 @@
 			Report: false,
 		}, client, md)
 
-		bot.Timeline.AddStep(rprefab.NewDefaultStep(md))
+		defaultStep := prefab.NewStep()
+		defaultStep.AddCard(prefab.NewGuestLoginCard(md))
+
+		bot.Timeline.AddStep(step)
 
 		return bot
 	})

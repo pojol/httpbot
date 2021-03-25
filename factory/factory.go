@@ -94,6 +94,7 @@ func Create(opts ...Option) (*BotFactory, error) {
 		lifeTime:  time.Minute,
 		pickMode:  StrategyPickNormal,
 		Interrupt: true,
+		batchSize: 1024,
 	}
 
 	for _, opt := range opts {
@@ -113,7 +114,7 @@ func Create(opts ...Option) (*BotFactory, error) {
 		doneCh:      make(chan string),
 		errCh:       make(chan bot.ErrInfo),
 		colorer:     color.New(),
-		batch:       sizewg.New(1024),
+		batch:       sizewg.New(p.batchSize),
 	}
 
 	for _, v := range p.matchUrl {
@@ -213,6 +214,8 @@ func (f *BotFactory) Report() {
 }
 
 func (f *BotFactory) pushReport(bot *bot.Bot) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
 
 	f.report.botNum++
 	robotReport := bot.GetReprotInfo()
@@ -239,9 +242,6 @@ func (f *BotFactory) pushReport(bot *bot.Bot) {
 }
 
 func (f *BotFactory) getRobot() *bot.Bot {
-
-	f.lock.Lock()
-	defer f.lock.Unlock()
 
 	if len(f.strategyLst) <= 0 {
 		panic(errors.New("not strategys"))
@@ -285,16 +285,10 @@ func (f *BotFactory) Run() error {
 }
 
 func (f *BotFactory) push(bot *bot.Bot) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-
 	f.bots[bot.ID()] = bot
 }
 
 func (f *BotFactory) pop(id string) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-
 	if _, ok := f.bots[id]; ok {
 		f.pushReport(f.bots[id])
 		delete(f.bots, id)
@@ -302,8 +296,6 @@ func (f *BotFactory) pop(id string) {
 }
 
 func (f *BotFactory) doerr(id string, err error) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
 
 	if f.parm.Interrupt {
 		panic(err)
@@ -311,7 +303,6 @@ func (f *BotFactory) doerr(id string, err error) {
 
 	if _, ok := f.bots[id]; ok {
 		delete(f.bots, id)
-
 		f.report.botNum++
 	}
 
@@ -322,14 +313,14 @@ func (f *BotFactory) router() {
 	for {
 		select {
 		case bot := <-f.translateCh:
-			f.batch.Enter()
+			f.batch.Add()
 			f.push(bot)
 			bot.Run(f.doneCh, f.errCh)
 		case id := <-f.doneCh:
-			f.batch.Leave()
+			f.batch.Done()
 			f.pop(id)
 		case err := <-f.errCh:
-			f.batch.Leave()
+			f.batch.Done()
 			f.doerr(err.ID, err.Err)
 		case <-f.exit.Done():
 			goto ext

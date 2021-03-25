@@ -61,6 +61,9 @@ type Parm struct {
 	//
 	// 如果没有调用 WithClient factory会创建一个默认的client
 	client *http.Client
+
+	// batchSize 批次大小（用于控制goroutine的并发数量（默认1024
+	batchSize int
 }
 
 // Option consul discover config wrapper
