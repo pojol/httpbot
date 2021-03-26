@@ -70,6 +70,6 @@ http://127.0.0.1:14001/v1/login/guest                   1               26ms    
 +--------------------------------------------------------------------------------------------------------+
 robot : 1 req count : 1 duration : 1s qps : 1 errors : 0
 
-http://127.0.0.1:14001/v1/login/guest                   match 1
+http://127.0.0.1:14001/v1/login/guest                   match
 coverage  1 / 1
 ```
