@@ -323,7 +323,7 @@ func (f *BotFactory) router() {
 		select {
 		case bot := <-f.translateCh:
 			f.push(bot)
-			bot.Run(f.doneCh, f.errCh)
+			bot.Run(f.exit, f.doneCh, f.errCh)
 		case id := <-f.doneCh:
 			f.pop(id, nil)
 		case err := <-f.errCh:
@@ -334,7 +334,7 @@ func (f *BotFactory) router() {
 	}
 
 ext:
-	// clean
+
 	// report
 	f.Report()
 
