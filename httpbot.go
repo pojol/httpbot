@@ -136,8 +136,9 @@ func (bot *Bot) Run(sw *internal.Switch, doneCh chan string, errCh chan ErrInfo)
 					}
 					return
 				}
-			}
 
+				time.Sleep(c.GetDelay())
+			}
 		}
 
 		if bot.parm.PrintReprot {

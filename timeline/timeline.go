@@ -15,6 +15,7 @@ import (
 // Step 步骤条, x轴，包含一组顺序执行的card
 type Step struct {
 	cards []card.ICard
+	name  string
 }
 
 // Timeline 时间轴，按时间步进的y轴
@@ -33,8 +34,10 @@ func (tl *Timeline) GetSteps() []*Step {
 }
 
 // NewStep 创建一个新的步骤条
-func NewStep() *Step {
-	step := &Step{}
+func NewStep(name string) *Step {
+	step := &Step{
+		name: name,
+	}
 	return step
 }
 
@@ -46,4 +49,8 @@ func (s *Step) AddCard(card card.ICard) {
 // GetCards 从步骤条中获取卡片列表
 func (s *Step) GetCards() []card.ICard {
 	return s.cards
+}
+
+func (s *Step) GetName() string {
+	return s.name
 }

@@ -49,7 +49,7 @@ func TestMain(m *testing.M) {
 		md, _ := prefab.NewBotData()
 		bot := httpbot.New(md, client, httpbot.WithPrintReprot(false))
 
-		step := timeline.NewStep()
+		step := timeline.NewStep("")
 		step.AddCard(&BCard{
 			Base:  card.NewCardWithConfig(),
 			URL:   srv.URL,
