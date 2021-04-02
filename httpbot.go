@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pojol/httpbot/card"
+	"github.com/pojol/httpbot/internal"
 	"github.com/pojol/httpbot/report"
 	"github.com/pojol/httpbot/timeline"
 )
@@ -115,7 +116,7 @@ EXT:
 }
 
 // Run run bot
-func (bot *Bot) Run(doneCh chan string, errCh chan ErrInfo) {
+func (bot *Bot) Run(sw *internal.Switch, doneCh chan string, errCh chan ErrInfo) {
 
 	go func() {
 		var err error
@@ -123,7 +124,7 @@ func (bot *Bot) Run(doneCh chan string, errCh chan ErrInfo) {
 		for _, s := range bot.Timeline.GetSteps() {
 
 			for _, c := range s.GetCards() {
-				if bot.stop {
+				if bot.stop || sw.HasOpend() {
 					return
 				}
 
@@ -135,8 +136,9 @@ func (bot *Bot) Run(doneCh chan string, errCh chan ErrInfo) {
 					}
 					return
 				}
-			}
 
+				time.Sleep(c.GetDelay())
+			}
 		}
 
 		if bot.parm.PrintReprot {

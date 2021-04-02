@@ -8,7 +8,7 @@ import (
 
 // NewDefaultStep 创建默认的step
 func NewDefaultStep(md *prefab.BotDat) *timeline.Step {
-	step := timeline.NewStep()
+	step := timeline.NewStep("NewDefaultStep")
 
 	step.AddCard(scard.NewGuestLoginCard(md))
 

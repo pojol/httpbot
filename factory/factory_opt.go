@@ -20,7 +20,7 @@ const (
 )
 
 // CreateBotFunc 创建机器人的工厂方法
-type CreateBotFunc func(addr string, client *http.Client) *bot.Bot
+type CreateBotFunc func(fmd interface{}, client *http.Client) *bot.Bot
 
 // Parm 机器人工厂可配置参数
 type Parm struct {

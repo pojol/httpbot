@@ -63,6 +63,8 @@ type BotFactory struct {
 	pickCursor  int
 
 	parm Parm
+	// 工厂的 metadata
+	md interface{}
 
 	colorer *color.Color
 
@@ -262,7 +264,7 @@ func (f *BotFactory) getRobot() *bot.Bot {
 		creator = f.strategyLst[rand.Intn(len(f.strategyLst))].F
 	}
 
-	bot := creator("", f.client)
+	bot := creator(f.md, f.client)
 	return bot
 }
 
@@ -323,7 +325,7 @@ func (f *BotFactory) router() {
 		select {
 		case bot := <-f.translateCh:
 			f.push(bot)
-			bot.Run(f.doneCh, f.errCh)
+			bot.Run(f.exit, f.doneCh, f.errCh)
 		case id := <-f.doneCh:
 			f.pop(id, nil)
 		case err := <-f.errCh:
@@ -334,7 +336,7 @@ func (f *BotFactory) router() {
 	}
 
 ext:
-	// clean
+
 	// report
 	f.Report()
 

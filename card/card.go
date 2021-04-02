@@ -3,6 +3,7 @@ package card
 import (
 	"net/http"
 	"reflect"
+	"time"
 )
 
 // ICard Card的抽象接口
@@ -14,6 +15,8 @@ type ICard interface {
 	GetClient() *http.Client
 	GetMethod() string
 	GetHeader() map[string]string
+
+	GetDelay() time.Duration
 
 	Enter() []byte
 	Leave(res *http.Response) error
