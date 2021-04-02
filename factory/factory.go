@@ -63,6 +63,8 @@ type BotFactory struct {
 	pickCursor  int
 
 	parm Parm
+	// 工厂的 metadata
+	md interface{}
 
 	colorer *color.Color
 
@@ -262,7 +264,7 @@ func (f *BotFactory) getRobot() *bot.Bot {
 		creator = f.strategyLst[rand.Intn(len(f.strategyLst))].F
 	}
 
-	bot := creator("", f.client)
+	bot := creator(f.md, f.client)
 	return bot
 }
 

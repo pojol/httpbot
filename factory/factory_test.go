@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	defer srv.Close()
 
 	bf, _ = Create(WithCreateNum(0), WithClient(&http.Client{}), WithRunMode(FactoryModeIncrease))
-	bf.Append("benchmark_static", func(url string, client *http.Client) *httpbot.Bot {
+	bf.Append("benchmark_static", func(fmd interface{}, client *http.Client) *httpbot.Bot {
 		md, _ := prefab.NewBotData()
 		bot := httpbot.New(md, client, httpbot.WithPrintReprot(false))
 

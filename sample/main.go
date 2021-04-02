@@ -86,7 +86,7 @@ func main() {
 	)
 	defer bf.Close()
 
-	bf.Append("default", func(url string, client *http.Client) *httpbot.Bot {
+	bf.Append("default", func(fmd interface{}, client *http.Client) *httpbot.Bot {
 		md, err := prefab.NewBotData()
 		if err != nil {
 			panic(err)
