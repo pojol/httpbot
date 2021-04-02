@@ -64,6 +64,9 @@ type Parm struct {
 
 	// batchSize 批次大小（用于控制goroutine的并发数量（默认1024
 	batchSize int
+
+	//
+	md interface{}
 }
 
 // Option consul discover config wrapper
@@ -122,5 +125,11 @@ func WithStrategyPick(mode string) Option {
 func WithInterrupt(interrupt bool) Option {
 	return func(c *Parm) {
 		c.Interrupt = interrupt
+	}
+}
+
+func WithMetadata(md interface{}) Option {
+	return func(c *Parm) {
+		c.md = md
 	}
 }
