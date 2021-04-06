@@ -121,24 +121,26 @@ func (bot *Bot) Run(sw *internal.Switch, doneCh chan string, errCh chan ErrInfo)
 	go func() {
 		var err error
 
-		for _, s := range bot.Timeline.GetSteps() {
-
-			for _, c := range s.GetCards() {
-				if bot.stop || sw.HasOpend() {
-					return
-				}
-
-				err = bot.exec(c)
-				if err != nil {
-					errCh <- ErrInfo{
-						ID:  bot.id,
-						Err: fmt.Errorf("%v err -> %w", c.GetName(), err),
-					}
-					return
-				}
-
-				time.Sleep(c.GetDelay())
+		for {
+			c := bot.Timeline.GetCards()
+			if bot.stop || sw.HasOpend() {
+				break
 			}
+
+			if c == nil {
+				break
+			}
+
+			err = bot.exec(c)
+			if err != nil {
+				errCh <- ErrInfo{
+					ID:  bot.id,
+					Err: fmt.Errorf("%v err -> %w", c.GetName(), err),
+				}
+				break
+			}
+
+			time.Sleep(c.GetDelay())
 		}
 
 		if bot.parm.PrintReprot {

@@ -201,7 +201,6 @@ func (f *BotFactory) Report() {
 		for k, v := range f.urlMatch {
 			if v > 0 {
 				coverage++
-				f.colorer.Printf("%-60s match\n", k)
 			} else {
 				f.colorer.Printf("%-60s %s\n", k, color.Red("not match"))
 			}
