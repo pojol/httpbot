@@ -5,7 +5,7 @@
 [![Doc Card](https://img.shields.io/badge/httpbot-doc-2ca5e0?style=flat&logo=appveyor)](https://pojol.gitbook.io/httpbot/)
 
 <div align="center">
-    <img src="https://i.postimg.cc/MHVGYjGN/image.png" alt="img" width="600">
+    <img src="https://i.postimg.cc/v86d0Vqv/image.png" alt="img" width="600">
 </div>
 
 #### Component
