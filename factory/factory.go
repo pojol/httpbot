@@ -291,6 +291,11 @@ func (f *BotFactory) Run() error {
 		})
 	}
 
+	select {
+	case <-f.exit.Done():
+	}
+	time.Sleep(time.Second)
+
 	return nil
 }
 
@@ -320,6 +325,7 @@ func (f *BotFactory) pop(id string, err error) {
 	if len(f.bots) == 0 && f.parm.mode == FactoryModeStatic {
 		f.exit.Open()
 	}
+
 }
 
 func (f *BotFactory) router() {
