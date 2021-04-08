@@ -105,9 +105,12 @@ func (bot *Bot) exec(c card.ICard) error {
 		err = c.Leave(res)
 		if err == nil {
 			bot.rep.SetInfo(c.GetURL(), true, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
+		} else {
+			bot.rep.SetInfo(c.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000), reqsize, res.ContentLength)
 		}
 	} else {
 		io.Copy(ioutil.Discard, res.Body)
+		bot.rep.SetInfo(c.GetURL(), false, int((time.Now().UnixNano()-begin)/1000/1000), 0, 0)
 		err = fmt.Errorf("http status %v url = %v err", res.Status, url)
 	}
 EXT:
@@ -133,14 +136,19 @@ func (bot *Bot) Run(sw *internal.Switch, doneCh chan string, errCh chan ErrInfo)
 
 			err = bot.exec(c)
 			if err != nil {
-				errCh <- ErrInfo{
-					ID:  bot.id,
-					Err: fmt.Errorf("%v err -> %w", c.GetName(), err),
-				}
+				err = fmt.Errorf("%v err -> %w", c.GetName(), err)
 				break
 			}
 
 			time.Sleep(c.GetDelay())
+		}
+
+		if err != nil {
+			errCh <- ErrInfo{
+				ID:  bot.id,
+				Err: err,
+			}
+			return
 		}
 
 		if bot.parm.PrintReprot {

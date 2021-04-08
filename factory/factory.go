@@ -157,7 +157,7 @@ func (f *BotFactory) Report() {
 	defer f.lock.Unlock()
 
 	fmt.Println("+--------------------------------------------------------------------------------------------------------+")
-	fmt.Printf("Req url%-33s Req count %-5s Average time %-5s Succ rate %-10s\n", "", "", "", "")
+	fmt.Printf("Req url%-33s Req count %-5s Average time %-5s Body req/res %-5s Succ rate %-10s\n", "", "", "", "", "")
 
 	arr := []string{}
 	for k := range f.report.urlMap {
@@ -182,7 +182,11 @@ func (f *BotFactory) Report() {
 		}
 
 		u, _ := url.Parse(sk)
-		fmt.Printf("%-40s %-15d %-18s %-10s %-5s\n", u.Path, v.reqNum, avg, succ, reqsize+" / "+ressize)
+		if v.errNum != 0 {
+			f.colorer.Printf("%-40s %-15d %-18s %-18s %-10s\n", u.Path, v.reqNum, avg, reqsize+" / "+ressize, color.Red(succ))
+		} else {
+			fmt.Printf("%-40s %-15d %-18s %-18s %-10s\n", u.Path, v.reqNum, avg, reqsize+" / "+ressize, succ)
+		}
 	}
 	fmt.Println("+--------------------------------------------------------------------------------------------------------+")
 
@@ -194,7 +198,11 @@ func (f *BotFactory) Report() {
 	qps := int(reqtotal / int64(durations))
 
 	duration := strconv.Itoa(durations) + "s"
-	fmt.Printf("robot : %d req count : %d duration : %s qps : %d errors : %d\n", f.report.botNum, f.report.reqNum, duration, qps, f.report.errNum)
+	if f.report.errNum != 0 {
+		f.colorer.Printf("robot : %d req count : %d duration : %s qps : %d errors : %v\n", f.report.botNum, f.report.reqNum, duration, qps, color.Red(f.report.errNum))
+	} else {
+		fmt.Printf("robot : %d req count : %d duration : %s qps : %d errors : %d\n", f.report.botNum, f.report.reqNum, duration, qps, f.report.errNum)
+	}
 
 	if len(f.urlMatch) != 0 {
 		coverage := 0
@@ -301,12 +309,10 @@ func (f *BotFactory) pop(id string, err error) {
 
 	if _, ok := f.bots[id]; ok {
 
-		if err == nil {
-			f.pushReport(f.bots[id])
-		} else {
+		f.pushReport(f.bots[id])
+		if err != nil {
 			f.colorer.Printf("%v\n", color.Red(err.Error()))
 		}
-
 		delete(f.bots, id)
 
 	}
