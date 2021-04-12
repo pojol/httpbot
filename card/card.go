@@ -1,6 +1,7 @@
 package card
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 	"time"
@@ -107,10 +108,10 @@ func (c *Card) Inject(childptr interface{}) {
 // Assert 执行断言判定
 func (c *Card) Assert() error {
 	var err error
-	for _, v := range c.assertInject {
+	for k, v := range c.assertInject {
 		err = v()
 		if err != nil {
-			return err
+			return fmt.Errorf("assert err %v %w", k, err)
 		}
 	}
 
