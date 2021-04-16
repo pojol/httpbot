@@ -1,5 +1,5 @@
 # httpbot
-一个基于线性时间驱动, 可进行逻辑编排的HTTP测试机器人框架
+A http test robot framework that can be logically orchestrated
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/pojol/httpbot)](https://goreportcard.com/report/github.com/pojol/httpbot)
 [![Doc Card](https://img.shields.io/badge/httpbot-doc-2ca5e0?style=flat&logo=appveyor)](https://pojol.gitbook.io/httpbot/)
@@ -10,14 +10,14 @@
 
 #### Component
 * Prefab
-  * **Metadata** 元数据，用于保存Bot整个生命周期中使用到的属性变量
-  * **Card** 用于包装HTTP请求（一次定义即可到处使用
+  * **Metadata** Save the attribute variables used in the entire life cycle of the Bot
+  * **Card** Used to wrap HTTP requests
 * Arrange
-  * **Timeline** Bot的逻辑驱动时间轴
-  * **Step** 步骤条，用于封装Bot的不同行动项，在这个阶段可以注入`参数`以及`断言`，来控制行为逻辑和检测对错
-  * **Strategy** 提供Bot的创建方法，以及行为编排（主要是聚合Step
+  * **Timeline** Logic drives the timeline
+  * **Step** Used to encapsulate different action items of the Bot. At this stage, you can inject `parameters` and `assertions` to control the behavior logic and detect right or wrong
+  * **Strategy** Provide Bot creation method, and behavior choreography (mainly aggregate Step
 * Driver
-  * **Factory** 工厂，用于按指定的方式批量执行Bot
+  * **Factory** Used for batch drives of bots
 
 
 
