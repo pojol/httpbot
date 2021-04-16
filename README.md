@@ -24,23 +24,34 @@ A http test robot framework that can be logically orchestrated
 #### Quick start
 ```go
 
-bf, _ := factory.Create()
+bf, _ := factory.Create(
+	factory.WithCreateNum(0),	// run all strategy
+	factory.WithLifeTime(time.Minute),
+	factory.WithRunMode(factory.FactoryModeStatic),
+	factory.WithMatchUrl([]string{
+		"/v1/login/guest",
+		"/v1/base/account.info"
+	}),
+)
 defer bf.Close()
 
-bf.Append("default", func(url string, client *http.Client) *httpbot.Bot {
+bf.Append("default strategy", func(url string, client *http.Client) *httpbot.Bot {
 	md, err := rprefab.NewBotData()
 	if err != nil {
 		panic(err)
 	}
 
-	bot := httpbot.New(httpbot.BotConfig{
-		Name:   "default bot",
-		Addr:   url,
-		Report: false,
-	}, client, md)
+	bot := httpbot.New(md, 
+		client, 
+		httpbot.WithName("default bot"))
 
 	defaultStep := prefab.NewStep()
-	defaultStep.AddCard(prefab.NewGuestLoginCard(md))
+
+	guestLoginCard := prefab.NewGuestLoginCard(md)
+	guestLoginCard.Base.InjectAssert("token assert", func() error {
+		return assert.NotEqual(md.Token, "")
+	})
+	defaultStep.AddCard(guestLoginCard)
 
 	bot.Timeline.AddStep(step)
 
@@ -55,14 +66,14 @@ bf.Run()
 
 #### report
 ```shell
-http://127.0.0.1:14001/v1/login/guest             Req count 1     Consume 26ms  Succ rate 1/1   0kb / 0kb
+/v1/login/guest             Req count 1     Consume 26ms  Succ rate 1/1   0kb / 0kb
 
-+--------------------------------------------------------------------------------------------------------+
-Req url                                           Req count       Average time       Succ rate
-http://127.0.0.1:14001/v1/login/guest             1               26ms               1/1        0kb / 0kb
-+--------------------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------------------------------+
+Req url                                     Req count       Average time       Succ rate
+/v1/login/guest             1               26ms               1/1        0kb / 0kb
++------------------------------------------------------------------------------------------------+
 robot : 1 req count : 1 duration : 1s qps : 1 errors : 0
 
-http://127.0.0.1:14001/v1/login/guest             match
-coverage  1 / 1
+/v1/base/account.info             not match
+coverage  1 / 2
 ```
