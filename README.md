@@ -70,7 +70,7 @@ bf.Run()
 
 
 
-### report
+### Report
 ```shell
 /v1/login/guest             Req count 1     Consume 26ms  Succ rate 1/1   0kb / 0kb
 
