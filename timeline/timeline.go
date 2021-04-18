@@ -29,8 +29,16 @@ func (tl *Timeline) AddStep(step *Step) {
 }
 
 // GetSteps 获取时间轴中的步骤条
-func (tl *Timeline) GetSteps() []*Step {
-	return tl.steps
+func (tl *Timeline) GetCards() card.ICard {
+
+	for sk, sv := range tl.steps {
+		for ck, cv := range sv.cards {
+			tl.steps[sk].cards = append(tl.steps[sk].cards[:ck], tl.steps[sk].cards[ck+1:]...)
+			return cv
+		}
+	}
+
+	return nil
 }
 
 // NewStep 创建一个新的步骤条
@@ -44,11 +52,6 @@ func NewStep(name string) *Step {
 // AddCard 添加一个预制的卡片到步骤条中
 func (s *Step) AddCard(card card.ICard) {
 	s.cards = append(s.cards, card)
-}
-
-// GetCards 从步骤条中获取卡片列表
-func (s *Step) GetCards() []card.ICard {
-	return s.cards
 }
 
 func (s *Step) GetName() string {
