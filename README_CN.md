@@ -3,31 +3,29 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/pojol/httpbot)](https://goreportcard.com/report/github.com/pojol/httpbot)
 [![Doc Card](https://img.shields.io/badge/httpbot-doc-2ca5e0?style=flat&logo=appveyor)](https://pojol.gitbook.io/httpbot/)
 
-[中文](README_CN.md)
-
 <div align="center">
     <img src="https://i.postimg.cc/v86d0Vqv/image.png" alt="img" width="600">
 </div>
 
-### Feature
-* **`Reusable`** HTTP request action, after defining the HTTP request, we can reuse this definition in any strategy (the request parameters can be changed by injection 
-* We can **`arrange`** tests in different strategies and then conduct their own tests for specific scenes. 
-* Provide factory methods, allowing users to use **`multiple drive models`** to test to achieve their respective tests in different scenarios. (C-> S self-test, integrated in the CI step for API test, pressure test, etc. ... 
+### 特性
+* `可复用`的 HTTP 请求动作，在定义完 HTTP 请求之后，我们可以在任意的策略中复用这个定义（可以通过注入改变请求参数
+* 逻辑`可编排`，我们可以将测试编排到各个不同的策略中，然后针对具体的场景进行各自的测试。
+* 提供工厂方法，让用户可以采用`多种驱动模型`进行测试，以达到在不同的场景可以进行各自的测试。（C->S的自测，集成在CI步骤中进行API测试，压力测试 等等...
 
-### Component
-* Prefab
-  * **Metadata** Save the attribute variables used in the entire life cycle of the Bot
-  * **Card** Used to wrap HTTP requests
-* Arrange
-  * **Timeline** Logic drives the timeline
-  * **Step** Used to encapsulate different action items of the Bot. At this stage, you can inject `parameters` and `assertions` to control the behavior logic and detect right or wrong
-  * **Strategy** Provide Bot creation method, and behavior choreography (mainly aggregate Step
-* Driver
-  * **Factory** Used for batch drives of bots
+### 组件
+* 预制阶段
+  * **Metadata** 元数据，用于保存 Bot 在整个生命周期中使用的变量。
+  * **Card** HTTP 请求的包装
+* 编排阶段
+  * **Timeline** 驱动逻辑执行顺序的时间轴
+  * **Step** 用于封装Bot的不同行为。 在这一阶段，您可以注入 `参数` 和 `断言` 来控制行为逻辑并检测对与错 
+  * **Strategy** 提供Bot的创建方法，以及行为编排（主要是整合Step
+* 驱动阶段
+  * **Factory** 用于批量创建Bot
 
 
 
-### Quick start
+### 快速开始
 ```go
 
 bf, _ := factory.Create(
@@ -70,7 +68,7 @@ bf.Run()
 
 
 
-### report
+### 输出预览
 ```shell
 /v1/login/guest             Req count 1     Consume 26ms  Succ rate 1/1   0kb / 0kb
 
