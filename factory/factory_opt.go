@@ -115,7 +115,7 @@ func WithClient(client *http.Client) Option {
 }
 
 // WithStrategyPick 设置策略的选取模式 (默认 normal 顺序执行
-func WithStrategyPick(mode string) Option {
+func WithStrategyPickMode(mode string) Option {
 	return func(c *Parm) {
 		c.pickMode = mode
 	}
@@ -128,8 +128,16 @@ func WithInterrupt(interrupt bool) Option {
 	}
 }
 
+// WithMetadata 工厂的元数据，用户将参数下沉到策略中
 func WithMetadata(md interface{}) Option {
 	return func(c *Parm) {
 		c.md = md
+	}
+}
+
+// BatchSize 控制同时并发的机器人数量（默认 1024 ，当用户的cpu核心较为富裕的时候可以放大的这个数量
+func BatchSize(size int) Option {
+	return func(c *Parm) {
+		c.batchSize = size
 	}
 }

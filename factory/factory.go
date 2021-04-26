@@ -210,7 +210,7 @@ func (f *BotFactory) Report() {
 			if v > 0 {
 				coverage++
 			} else {
-				f.colorer.Printf("%-60s %s\n", k, color.Red("not match"))
+				f.colorer.Printf("%-60s %s\n", k, color.Red("no match"))
 			}
 		}
 
